@@ -30,15 +30,24 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate create(RequerimentoTemplate entity) {
+
         validator.validateFields(entity.fields);
 
         entity.id = UUID.randomUUID();
+
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
         entity.createdAt = Instant.now();
         entity.updatedAt = Instant.now();
         entity.isActive = true;
         entity.version = 1;
 
         repository.persist(entity);
+
         return entity;
     }
 
@@ -51,13 +60,17 @@ public class RequerimentoTemplateService {
             throw new RuntimeException("Template not found");
         }
 
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
         db.name = entity.name;
         db.description = entity.description;
         db.category = entity.category;
         db.fields = entity.fields;
         db.updatedAt = Instant.now();
-
-        repository.persist(db);
 
         return db;
     }

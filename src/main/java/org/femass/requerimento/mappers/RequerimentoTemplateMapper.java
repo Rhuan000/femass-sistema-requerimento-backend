@@ -63,6 +63,7 @@ public class RequerimentoTemplateMapper {
 
         RequerimentoTemplateFieldDTO dto = new RequerimentoTemplateFieldDTO();
 
+        dto.id = (String) map.get("id");
         dto.fieldKey = (String) map.get("fieldKey");
         dto.label = (String) map.get("label");
         dto.type = (String) map.get("type");
@@ -78,9 +79,6 @@ public class RequerimentoTemplateMapper {
         return dto;
     }
 
-    // -------------------------
-    // DTO -> ENTITY (JSONB MAP)
-    // -------------------------
     private Map<String, Object> mapToMap(RequerimentoTemplateFieldDTO dto) {
 
         Map<String, Object> map = new HashMap<>();

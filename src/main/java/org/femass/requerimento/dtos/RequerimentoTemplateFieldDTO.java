@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class RequerimentoTemplateFieldDTO {
+    public String id;
     public String fieldKey;
     public String label;
     public String type;
