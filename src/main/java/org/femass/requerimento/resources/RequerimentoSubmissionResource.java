@@ -8,6 +8,7 @@ import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
 import org.femass.requerimento.entities.RequerimentoSubmission;
 import org.femass.requerimento.mappers.RequerimentoSubmissionMapper;
 import org.femass.requerimento.services.RequerimentoSubmissionService;
+import org.femass.requerimento.services.RequerimentoTemplateService;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,9 @@ public class RequerimentoSubmissionResource {
     @Inject
     RequerimentoSubmissionMapper mapper;
 
+    @Inject
+    RequerimentoTemplateService templateService;
+
     @POST
     public Response submit(RequerimentoSubmissionDTO dto) {
 
@@ -30,7 +34,7 @@ public class RequerimentoSubmissionResource {
         service.create(entity);
 
         return Response.status(Response.Status.CREATED)
-                .entity(mapper.toDTO(entity))
+                .entity(mapper.toDTO(entity, templateService.get(entity.templateId)))
                 .build();
     }
 
@@ -39,13 +43,17 @@ public class RequerimentoSubmissionResource {
     public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {
         return service.findByTemplate(templateId)
                 .stream()
-                .map(mapper::toDTO)
+                .map(submission -> mapper.toDTO(
+                        submission,
+                        templateService.get(submission.templateId)
+                ))
                 .toList();
     }
 
     @GET
     @Path("/{id}")
     public RequerimentoSubmissionDTO get(@PathParam("id") UUID id) {
-        return mapper.toDTO(service.get(id));
+        RequerimentoSubmission submission = service.get(id);
+        return mapper.toDTO(submission, templateService.get(submission.templateId));
     }
 }
