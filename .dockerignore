@@ -1,5 +1,13 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
-!target/quarkus-app/*
+# build output
+target
+
+# IDEs
+.idea
+*.iml
+.vscode
+
+# git
+.git
+
+# system files
+.DS_Store

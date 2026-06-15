@@ -15,7 +15,7 @@ import java.util.UUID;
 public class RequerimentoTemplateMapper {
 
     public RequerimentoTemplateDTO toDTO(RequerimentoTemplate entity) {
-
+        if (entity == null) return null;
         RequerimentoTemplateDTO dto = new RequerimentoTemplateDTO();
 
         dto.id = entity.id;
@@ -37,7 +37,7 @@ public class RequerimentoTemplateMapper {
     }
 
     public RequerimentoTemplate toEntity(RequerimentoTemplateDTO dto) {
-
+        if (dto == null) return null;
         RequerimentoTemplate entity = new RequerimentoTemplate();
 
         entity.id = dto.id;

@@ -24,6 +24,7 @@ public class RequerimentoTemplateResource {
     RequerimentoTemplateMapper mapper;
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public List<RequerimentoTemplateDTO> listActive() {
         return service.listActive()
                 .stream()
@@ -33,11 +34,14 @@ public class RequerimentoTemplateResource {
 
     @GET
     @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public RequerimentoTemplateDTO get(@PathParam("id") UUID id) {
         return mapper.toDTO(service.get(id));
     }
 
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response create(RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
@@ -50,6 +54,8 @@ public class RequerimentoTemplateResource {
 
     @PUT
     @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
