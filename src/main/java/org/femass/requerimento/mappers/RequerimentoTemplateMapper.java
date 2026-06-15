@@ -6,10 +6,10 @@ import org.femass.requerimento.dtos.RequerimentoTemplateFieldDTO;
 import org.femass.requerimento.dtos.SelectOptionDTO;
 import org.femass.requerimento.entities.RequerimentoTemplate;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @ApplicationScoped
 public class RequerimentoTemplateMapper {
@@ -72,9 +72,9 @@ public class RequerimentoTemplateMapper {
         dto.description = (String) map.get("description");
 
         Object position = map.get("position");
-        dto.position = position != null ? (Integer) position : null;
+        dto.position = toInteger(position);
 
-        dto.options = (List<SelectOptionDTO>) map.get("options");
+        dto.options = toOptions(map.get("options"));
 
         return dto;
     }
@@ -83,6 +83,9 @@ public class RequerimentoTemplateMapper {
 
         Map<String, Object> map = new HashMap<>();
 
+        if (dto.id != null) {
+            map.put("id", dto.id);
+        }
         map.put("fieldKey", dto.fieldKey);
         map.put("label", dto.label);
         map.put("type", dto.type);
@@ -90,8 +93,58 @@ public class RequerimentoTemplateMapper {
         map.put("placeholder", dto.placeholder);
         map.put("description", dto.description);
         map.put("position", dto.position);
-        map.put("options", dto.options);
+        map.put("options", dto.options == null
+                ? List.of()
+                : dto.options.stream().map(this::optionToMap).toList());
 
         return map;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal decimal) {
+            return decimal.intValueExact();
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(value.toString());
+    }
+
+    private List<SelectOptionDTO> toOptions(Object value) {
+        if (!(value instanceof List<?> options)) {
+            return List.of();
+        }
+
+        return options.stream()
+                .map(this::toOptionDTO)
+                .toList();
+    }
+
+    private SelectOptionDTO toOptionDTO(Object value) {
+        if (value instanceof SelectOptionDTO option) {
+            return option;
+        }
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new IllegalArgumentException("Opção de campo inválida");
+        }
+
+        SelectOptionDTO option = new SelectOptionDTO();
+        option.label = stringValue(map.get("label"));
+        option.value = stringValue(map.get("value"));
+        return option;
+    }
+
+    private Map<String, Object> optionToMap(SelectOptionDTO option) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("label", option.label);
+        map.put("value", option.value);
+        return map;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
     }
 }
