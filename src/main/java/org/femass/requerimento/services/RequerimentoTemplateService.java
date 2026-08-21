@@ -43,8 +43,8 @@ public class RequerimentoTemplateService {
 
         entity.createdAt = Instant.now();
         entity.updatedAt = Instant.now();
-        entity.isActive = true;
-        entity.version = 1;
+        entity.isActive = false;
+        entity.version = null;
 
         repository.persist(entity);
 
