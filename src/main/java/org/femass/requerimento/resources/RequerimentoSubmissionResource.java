@@ -1,5 +1,7 @@
 package org.femass.requerimento.resources;
 
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -28,6 +30,7 @@ public class RequerimentoSubmissionResource {
     RequerimentoTemplateService templateService;
 
     @POST
+    @RolesAllowed({"ALUNO", "PROFESSOR",})
     public Response submit(RequerimentoSubmissionDTO dto) {
 
         RequerimentoSubmission entity = mapper.toEntity(dto);
@@ -40,6 +43,7 @@ public class RequerimentoSubmissionResource {
 
     @GET
     @Path("/template/{templateId}")
+    @Authenticated
     public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {
         return service.findByTemplate(templateId)
                 .stream()
@@ -52,6 +56,7 @@ public class RequerimentoSubmissionResource {
 
     @GET
     @Path("/{id}")
+    @Authenticated
     public RequerimentoSubmissionDTO get(@PathParam("id") UUID id) {
         RequerimentoSubmission submission = service.get(id);
         return mapper.toDTO(submission, templateService.get(submission.templateId));

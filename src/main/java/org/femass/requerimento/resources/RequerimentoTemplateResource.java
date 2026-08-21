@@ -1,5 +1,7 @@
 package org.femass.requerimento.resources;
 
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -25,6 +27,7 @@ public class RequerimentoTemplateResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
     public List<RequerimentoTemplateDTO> listActive() {
         return service.listActive()
                 .stream()
@@ -35,6 +38,7 @@ public class RequerimentoTemplateResource {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
     public RequerimentoTemplateDTO get(@PathParam("id") UUID id) {
         return mapper.toDTO(service.get(id));
     }
@@ -42,6 +46,7 @@ public class RequerimentoTemplateResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
     public Response create(RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
@@ -56,6 +61,7 @@ public class RequerimentoTemplateResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
     public Response update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
