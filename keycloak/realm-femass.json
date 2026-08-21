@@ -1,0 +1,205 @@
+{
+  "realm": "femass",
+  "displayName": "FeMASS Requerimentos",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Pode administrar templates, usuarios e configuracoes funcionais"
+      },
+      {
+        "name": "ALUNO",
+        "description": "Pode abrir novos requerimentos baseados em templates existentes, acompanhar seus próprios requerimentos, atender pedidos de modificacao"
+      },
+      {
+        "name": "PROFESSOR",
+        "description": "Pode abrir novos requerimentos, solicitar abertura de novos templates, aprovar e reprovar requerimentos, acompanhar requerimentos próprios e responsável, fechar um requerimento responsável"
+      },
+      {
+        "name": "SECRETARIA",
+        "description": "Pode solicitar abertura de novos templates, aprovar e reprovar requerimentos reponsáveis, acompanhar requerimentos reponsáveis e matérias, fechar requerimento responsável"
+      },
+      {
+        "name": "COODERNADOR",
+        "description": "Pode aprovar ou reprovar abertura de templates, pode abrir novos templates, aprovar e reprovar requerimentos responsáveis, acompanhar todos os requerimentos de um curso, fechar requerimentos"
+      },
+      {
+        "name": "DIRETOR",
+        "description": "Pode aprovar ou reprovar abertura de templates, pode abrir novos templates, aprovar ou reprovar requerimentos, acompanhar requerimentos responsável, acompanhar todos os requerimentos com filtro, fechar requerimentos all"
+
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "backend-service",
+      "name": "API de Requerimentos FeMASS",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "femass-frontend",
+      "name": "Frontend de Requerimentos FeMASS",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "backend-service-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "backend-service",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "aluno.dev",
+      "email": "aluno.dev@femass.edu.br",
+      "firstName": "Aluno",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ALUNO"
+      ]
+    },
+    {
+      "username": "analista.dev",
+      "email": "analista.dev@femass.edu.br",
+      "firstName": "Admin",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    },
+    {
+      "username": "professor.dev",
+      "email": "professor.dev@femass.edu.br",
+      "firstName": "Professor",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "PROFESSOR"
+      ]
+    },
+    {
+      "username": "Coordernador.dev",
+      "email": "coordenador.dev@femass.edu.br",
+      "firstName": "Coordenador",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "COODERNADOR"
+      ]
+    },
+    {
+      "username": "Diretor.dev",
+      "email": "diretor.dev@femass.edu.br",
+      "firstName": "Admin",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DIRETOR"
+      ]
+    },
+    {
+      "username": "admin.dev",
+      "email": "admin.dev@femass.edu.br",
+      "firstName": "Administrador",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN",
+        "ANALISTA",
+        "SOLICITANTE"
+      ]
+    }
+  ]
+}

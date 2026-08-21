@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class RequerimentoTemplateDTO {
+public class  RequerimentoTemplateDTO {
     public UUID id;
     public String name;
     public String description;

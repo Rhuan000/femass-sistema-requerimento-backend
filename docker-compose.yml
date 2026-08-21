@@ -17,6 +17,21 @@ services:
     volumes:
       - femass-requerimento-data:/var/lib/postgresql/data
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    container_name: femass-requerimento-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: "${KEYCLOAK_ADMIN_USERNAME:-admin}"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
+      KC_HOSTNAME: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8130}"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports:
+      - "8130:8080"
+    volumes:
+      - ./keycloak/realm-femass.json:/opt/keycloak/data/import/realm-femass.json:ro
+      - femass-keycloak-data:/opt/keycloak/data
+
 
 
   backend:
@@ -36,10 +51,11 @@ services:
       # MP Rest client for match-relevancia (maps to quarkus.rest-client.match-relevancia.url)
       QUARKUS_REST_CLIENT_MATCH_RELEVANCIA_URL: "${QUARKUS_REST_CLIENT_MATCH_RELEVANCIA_URL:-https://y1ww0xpk1g.execute-api.us-east-1.amazonaws.com}"
 
-      # OIDC (Keycloak) - defaults point to compose keycloak service
-      QUARKUS_OIDC_AUTH_SERVER_URL: "${QUARKUS_OIDC_AUTH_SERVER_URL:-http://keycloak:8080/realms/quarkus}"
+      # OIDC (Keycloak) - valida tokens emitidos para a API
+      QUARKUS_OIDC_AUTH_SERVER_URL: "${QUARKUS_OIDC_AUTH_SERVER_URL:-http://keycloak:8080/realms/femass}"
       QUARKUS_OIDC_CLIENT_ID: "${QUARKUS_OIDC_CLIENT_ID:-backend-service}"
-      QUARKUS_OIDC_CREDENTIALS_SECRET: "${QUARKUS_OIDC_CREDENTIALS_SECRET}"
+      QUARKUS_OIDC_TOKEN_ISSUER: "${QUARKUS_OIDC_TOKEN_ISSUER:-http://localhost:8130/realms/femass}"
+      QUARKUS_OIDC_TOKEN_AUDIENCE: "${QUARKUS_OIDC_TOKEN_AUDIENCE:-backend-service}"
 
       # CORS (optional) - defaults to local frontend origin; set QUARKUS_HTTP_CORS_ORIGINS to override
       QUARKUS_HTTP_CORS: "${QUARKUS_HTTP_CORS:-true}"
@@ -50,6 +66,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak:
+        condition: service_started
 
 volumes:
   femass-requerimento-data:
+  femass-keycloak-data:
