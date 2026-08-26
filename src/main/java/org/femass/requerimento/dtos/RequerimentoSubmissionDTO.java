@@ -8,7 +8,7 @@ import java.util.UUID;
 public class RequerimentoSubmissionDTO {
     public UUID id;
     public UUID templateId;
-    public String submittedBy;
+    public String usuarioId;
     public String status;
     public Instant createdAt;
 

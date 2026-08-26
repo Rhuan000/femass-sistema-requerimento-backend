@@ -9,7 +9,6 @@ import org.femass.requerimento.entities.RequerimentoTemplate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @ApplicationScoped
 public class RequerimentoSubmissionMapper {
@@ -26,7 +25,7 @@ public class RequerimentoSubmissionMapper {
 
         dto.id = entity.id;
         dto.templateId = entity.templateId;
-        dto.submittedBy = entity.submittedBy;
+        dto.usuarioId = entity.usuario.id != null ? entity.usuario.id.toString() : null;
         dto.status = entity.status;
         dto.createdAt = entity.createdAt;
 
@@ -109,7 +108,6 @@ public class RequerimentoSubmissionMapper {
 
         entity.id = dto.id;
         entity.templateId = dto.templateId;
-        entity.submittedBy = dto.submittedBy;
         entity.status = dto.status;
         entity.createdAt = dto.createdAt;
 

@@ -3,11 +3,15 @@ package org.femass.requerimento.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import org.femass.requerimento.entities.RequerimentoSubmission;
 import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
 import org.femass.requerimento.repositories.RequerimentoSubmissionRepository;
 import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
 import org.femass.requerimento.validators.RequerimentoSubmissionValidator;
+import io.quarkus.security.identity.SecurityIdentity;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -20,13 +24,22 @@ import java.util.UUID;
 public class RequerimentoSubmissionService {
 
     @Inject
+    SecurityIdentity securityIdentity;
+
+    @Inject
     RequerimentoSubmissionRepository repository;
 
     @Inject
     RequerimentoSubmissionValidator validator;
 
     @Inject
+    IdentidadeUsuarioRepository identidadeUsuarioRepository;
+
+    @Inject
     RequerimentoTemplateRepository templateRepository;
+
+    @Inject
+    CurrentUserService currentUserService;
 
     public RequerimentoSubmission get(UUID id) {
         return repository.findById(id);
@@ -38,7 +51,8 @@ public class RequerimentoSubmissionService {
 
     @Transactional
     public RequerimentoSubmission create(RequerimentoSubmission entity) {
-
+        Usuario user = currentUserService.get();
+        
         RequerimentoTemplate template =
                 templateRepository.findById(entity.templateId);
 
@@ -51,6 +65,7 @@ public class RequerimentoSubmissionService {
         entity.id = UUID.randomUUID();
         entity.createdAt = Instant.now();
         entity.status = "pending";
+        entity.usuario = user;
         entity.answers = buildAnswerSnapshot(template, entity.data);
 
         repository.persist(entity);
