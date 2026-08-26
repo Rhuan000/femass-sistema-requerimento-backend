@@ -1,0 +1,3791 @@
+PROJETO - ESTRUTURA E CONTEÚDO
+
+ESTRUTURA DE PASTAS
+./
+  main/
+  test/
+  main/
+    docker/
+    java/
+    resources/
+    docker/
+    java/
+      org/
+      org/
+        femass/
+        femass/
+          requerimento/
+          requerimento/
+            dtos/
+            entities/
+            exceptions/
+            mappers/
+            repositories/
+            resources/
+            services/
+            validators/
+            dtos/
+            entities/
+              enum/
+              enum/
+            exceptions/
+            mappers/
+            repositories/
+            resources/
+            services/
+            validators/
+    resources/
+  test/
+    java/
+    java/
+      org/
+      org/
+        femass/
+        femass/
+          requerimento/
+          requerimento/
+            mappers/
+            mappers/
+
+
+CONTEÚDO DOS ARQUIVOS
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\ErrorDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+
+public class ErrorDTO {
+
+    public int status;
+    public String error;
+    public String message;
+    public String path;
+    public Instant timestamp;
+
+    public ErrorDTO(
+            int status,
+            String error,
+            String message,
+            String path
+    ) {
+        this.status = status;
+        this.error = error;
+        this.message = message;
+        this.path = path;
+        this.timestamp = Instant.now();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoSubmissionAnswerDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+public class RequerimentoSubmissionAnswerDTO {
+    public String fieldKey;
+    public String label;
+    public Object value;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoSubmissionDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+public class RequerimentoSubmissionDTO {
+    public UUID id;
+    public UUID templateId;
+    public String usuarioId;
+    public String status;
+    public Instant createdAt;
+
+    public Map<String, Object> data;
+    public List<RequerimentoSubmissionAnswerDTO> answers;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoTemplateDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+public class  RequerimentoTemplateDTO {
+    public UUID id;
+    public String name;
+    public String description;
+    public String category;
+    public Integer version;
+    public Boolean isActive;
+    public List<RequerimentoTemplateFieldDTO> fields;
+    public Instant createdAt;
+    public Instant updatedAt;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoTemplateFieldDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.util.List;
+
+public class RequerimentoTemplateFieldDTO {
+    public String id;
+    public String fieldKey;
+    public String label;
+    public String type;
+    public Boolean required;
+    public String placeholder;
+    public String description;
+    public List<SelectOptionDTO> options;
+    public Integer position;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\SelectOptionDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+public class SelectOptionDTO {
+    public String label;
+    public String value;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\IdentidadeUsuario.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.UUID;
+
+@Entity
+@Table(
+        name = "identidade_usuario",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_identidade_provider_external",
+                        columnNames = {"provider", "externalId"}
+                )
+        }
+)
+public class IdentidadeUsuario {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "usuario_id",
+            nullable = false
+    )
+    public Usuario usuario;
+
+    @Column(nullable = false, length = 50)
+    public String provider;
+
+    @Column(nullable = false, length = 255)
+    public String externalId;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\Papel.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(
+        name = "papel",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_papel_nome",
+                        columnNames = "nome"
+                )
+        }
+)
+public class Papel {
+    @Id
+    public Long id;
+
+    @Column(nullable = false, length = 50)
+    public String nome;
+
+    @Column(length = 255)
+    public String descricao;
+
+    @OneToMany(mappedBy = "papel")
+    public Set<UsuarioPapel> usuarios = new HashSet<>();
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\RequerimentoSubmission.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Entity
+@Table(name = "requerimento_submission")
+public class RequerimentoSubmission {
+
+    @Id
+    public UUID id;
+
+    public UUID templateId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    public Usuario usuario;
+
+    public String status;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public Map<String, Object> data;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public List<Map<String, Object>> answers;
+
+    public Instant createdAt;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\RequerimentoTemplate.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Entity
+@Table(name = "requerimento_template")
+public class RequerimentoTemplate {
+
+    @Id
+    public UUID id;
+
+    public String name;
+    public String description;
+    public String category;
+    public Integer version;
+    public Boolean isActive;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public List<Map<String, Object>> fields;
+
+    public Instant createdAt;
+    public Instant updatedAt;
+}
+
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\Usuario.java
+
+```java
+
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@Entity
+
+@Table(
+    name = "usuario",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_usuario_email",
+            columnNames = "email"
+        )
+    }
+)public class Usuario {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @Column(nullable = false, length = 150)
+    public String nome;
+
+    @Column(nullable = false, length = 150)
+    public String email;
+
+    @Column(nullable = false)
+    public Boolean ativo = true;
+
+    @Column(nullable = false)
+    public Instant createdAt;
+
+    public Instant updatedAt;
+
+    @OneToMany(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public Set<IdentidadeUsuario> identidades = new HashSet<>();
+
+    @OneToMany(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public Set<UsuarioPapel> papeis = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+
+        if (ativo == null) {
+            ativo = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
+
+    public void adicionarIdentidade(
+            String provider,
+            String externalId
+    ) {
+        IdentidadeUsuario identidade = new IdentidadeUsuario();
+
+        identidade.usuario = this;
+        identidade.provider = provider;
+        identidade.externalId = externalId;
+
+        identidades.add(identidade);
+    }
+
+    public void adicionarPapel(Papel papel) {
+        UsuarioPapel usuarioPapel = new UsuarioPapel();
+
+        usuarioPapel.usuario = this;
+        usuarioPapel.papel = papel;
+
+        papeis.add(usuarioPapel);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\UsuarioPapel.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.UUID;
+
+@Entity
+@Table(
+        name = "usuario_papel",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_usuario_papel",
+                        columnNames = {"usuario_id", "papel_id"}
+                )
+        }
+)
+public class UsuarioPapel {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "usuario_id",
+            nullable = false
+    )
+    public Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "papel_id",
+            nullable = false
+    )
+    public Papel papel;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\enum\PapelEnum.java
+
+```java
+public enum PapelEnum {
+
+    ADMIN(1L),
+    SERVIDOR(2L),
+    ALUNO(3L),
+    ANALISTA(4L);
+
+    private final Long id;
+
+    PapelEnum(Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\AuthorizationException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class AuthorizationException extends RuntimeException {
+
+    public  AuthorizationException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\AuthorizationExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class AuthorizationExceptionMapper
+        implements ExceptionMapper<BusinessValidationException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(BusinessValidationException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.FORBIDDEN.getStatusCode(),
+                "Forbidden",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.FORBIDDEN)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\BusinessValidationException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class BusinessValidationException extends RuntimeException {
+
+    public BusinessValidationException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\BusinessValidationExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class BusinessValidationExceptionMapper
+        implements ExceptionMapper<BusinessValidationException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(BusinessValidationException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.BAD_REQUEST.getStatusCode(),
+                "Bad Request",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\ResourceNotFoundException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\ResourceNotFoundExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class ResourceNotFoundExceptionMapper
+        implements ExceptionMapper<ResourceNotFoundException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(ResourceNotFoundException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.NOT_FOUND.getStatusCode(),
+                "Not Found",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.NOT_FOUND)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\mappers\RequerimentoSubmissionMapper.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.dtos.RequerimentoSubmissionAnswerDTO;
+import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+@ApplicationScoped
+public class RequerimentoSubmissionMapper {
+
+    public RequerimentoSubmissionDTO toDTO(RequerimentoSubmission entity) {
+        return toDTO(entity, null);
+    }
+
+    public RequerimentoSubmissionDTO toDTO(
+            RequerimentoSubmission entity,
+            RequerimentoTemplate template
+    ) {
+        RequerimentoSubmissionDTO dto = new RequerimentoSubmissionDTO();
+
+        dto.id = entity.id;
+        dto.templateId = entity.templateId;
+        dto.usuarioId = entity.usuario.id != null ? entity.usuario.id.toString() : null;
+        dto.status = entity.status;
+        dto.createdAt = entity.createdAt;
+
+        dto.data = entity.data;
+        dto.answers = mapAnswers(entity.data, entity.answers, template);
+
+        return dto;
+    }
+
+    private List<RequerimentoSubmissionAnswerDTO> mapAnswers(
+            Map<String, Object> data,
+            List<Map<String, Object>> answerSnapshot,
+            RequerimentoTemplate template
+    ) {
+        if (answerSnapshot != null && !answerSnapshot.isEmpty()) {
+            return answerSnapshot.stream()
+                    .map(answer -> toAnswer(
+                            stringValue(answer.get("fieldKey")),
+                            stringValue(answer.get("label")),
+                            answer.get("value")
+                    ))
+                    .toList();
+        }
+
+        if (data == null || data.isEmpty()) {
+            return List.of();
+        }
+
+        if (template == null || template.fields == null) {
+            return data.entrySet().stream()
+                    .map(entry -> toAnswer(entry.getKey(), entry.getKey(), entry.getValue()))
+                    .toList();
+        }
+
+        return template.fields.stream()
+                .sorted(Comparator.comparingInt(this::position))
+                .map(field -> {
+                    String fieldKey = stringValue(field.get("fieldKey"));
+                    if (fieldKey == null || !data.containsKey(fieldKey)) {
+                        return null;
+                    }
+                    String label = stringValue(field.get("label"));
+                    return toAnswer(
+                            fieldKey,
+                            label == null || label.isBlank() ? fieldKey : label,
+                            data.get(fieldKey)
+                    );
+                })
+                .filter(answer -> answer != null)
+                .toList();
+    }
+
+    private RequerimentoSubmissionAnswerDTO toAnswer(
+            String fieldKey,
+            String label,
+            Object value
+    ) {
+        RequerimentoSubmissionAnswerDTO answer = new RequerimentoSubmissionAnswerDTO();
+        answer.fieldKey = fieldKey;
+        answer.label = label;
+        answer.value = value;
+        return answer;
+    }
+
+    private int position(Map<String, Object> field) {
+        Object value = field.get("position");
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    public RequerimentoSubmission toEntity(RequerimentoSubmissionDTO dto) {
+
+        RequerimentoSubmission entity = new RequerimentoSubmission();
+
+        entity.id = dto.id;
+        entity.templateId = dto.templateId;
+        entity.status = dto.status;
+        entity.createdAt = dto.createdAt;
+
+        entity.data = dto.data;
+
+        return entity;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\mappers\RequerimentoTemplateMapper.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.dtos.RequerimentoTemplateDTO;
+import org.femass.requerimento.dtos.RequerimentoTemplateFieldDTO;
+import org.femass.requerimento.dtos.SelectOptionDTO;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@ApplicationScoped
+public class RequerimentoTemplateMapper {
+
+    public RequerimentoTemplateDTO toDTO(RequerimentoTemplate entity) {
+        if (entity == null) return null;
+        RequerimentoTemplateDTO dto = new RequerimentoTemplateDTO();
+
+        dto.id = entity.id;
+        dto.name = entity.name;
+        dto.description = entity.description;
+        dto.category = entity.category;
+        dto.version = entity.version;
+        dto.isActive = entity.isActive;
+        dto.createdAt = entity.createdAt;
+        dto.updatedAt = entity.updatedAt;
+
+        dto.fields = entity.fields == null
+                ? List.of()
+                : entity.fields.stream()
+                .map(this::mapToFieldDTO)
+                .toList();
+
+        return dto;
+    }
+
+    public RequerimentoTemplate toEntity(RequerimentoTemplateDTO dto) {
+        if (dto == null) return null;
+        RequerimentoTemplate entity = new RequerimentoTemplate();
+
+        entity.id = dto.id;
+        entity.name = dto.name;
+        entity.description = dto.description;
+        entity.category = dto.category;
+        entity.version = dto.version;
+        entity.isActive = dto.isActive;
+        entity.createdAt = dto.createdAt;
+        entity.updatedAt = dto.updatedAt;
+
+        entity.fields = dto.fields == null
+                ? List.of()
+                : dto.fields.stream()
+                .map(this::mapToMap)
+                .toList();
+
+        return entity;
+    }
+
+
+    private RequerimentoTemplateFieldDTO mapToFieldDTO(Map<String, Object> map) {
+
+        RequerimentoTemplateFieldDTO dto = new RequerimentoTemplateFieldDTO();
+
+        dto.id = (String) map.get("id");
+        dto.fieldKey = (String) map.get("fieldKey");
+        dto.label = (String) map.get("label");
+        dto.type = (String) map.get("type");
+        dto.required = (Boolean) map.get("required");
+        dto.placeholder = (String) map.get("placeholder");
+        dto.description = (String) map.get("description");
+
+        Object position = map.get("position");
+        dto.position = toInteger(position);
+
+        dto.options = toOptions(map.get("options"));
+
+        return dto;
+    }
+
+    private Map<String, Object> mapToMap(RequerimentoTemplateFieldDTO dto) {
+
+        Map<String, Object> map = new HashMap<>();
+
+        if (dto.id != null) {
+            map.put("id", dto.id);
+        }
+        map.put("fieldKey", dto.fieldKey);
+        map.put("label", dto.label);
+        map.put("type", dto.type);
+        map.put("required", dto.required);
+        map.put("placeholder", dto.placeholder);
+        map.put("description", dto.description);
+        map.put("position", dto.position);
+        map.put("options", dto.options == null
+                ? List.of()
+                : dto.options.stream().map(this::optionToMap).toList());
+
+        return map;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal decimal) {
+            return decimal.intValueExact();
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(value.toString());
+    }
+
+    private List<SelectOptionDTO> toOptions(Object value) {
+        if (!(value instanceof List<?> options)) {
+            return List.of();
+        }
+
+        return options.stream()
+                .map(this::toOptionDTO)
+                .toList();
+    }
+
+    private SelectOptionDTO toOptionDTO(Object value) {
+        if (value instanceof SelectOptionDTO option) {
+            return option;
+        }
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new IllegalArgumentException("Opção de campo inválida");
+        }
+
+        SelectOptionDTO option = new SelectOptionDTO();
+        option.label = stringValue(map.get("label"));
+        option.value = stringValue(map.get("value"));
+        return option;
+    }
+
+    private Map<String, Object> optionToMap(SelectOptionDTO option) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("label", option.label);
+        map.put("value", option.value);
+        return map;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\IdentidadeUsuarioRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.IdentidadeUsuario;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class IdentidadeUsuarioRepository
+        implements PanacheRepositoryBase<IdentidadeUsuario, UUID> {
+
+    public IdentidadeUsuario findByProviderAndExternalId(
+            String provider,
+            String externalId
+    ) {
+        return find(
+                "provider = ?1 and externalId = ?2",
+                provider,
+                externalId
+        ).firstResult();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\PapelRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.Papel;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class PapelRepository
+        implements PanacheRepositoryBase<Papel, UUID> {
+
+    public Papel findByNome(String nome) {
+        return find("nome", nome).firstResult();
+    }
+    public Papel findById(Long id) {
+        return find("id", id).firstResult();
+    }
+
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\RequerimentoSubmissionRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoSubmissionRepository implements PanacheRepositoryBase<RequerimentoSubmission, UUID> {
+
+    public List<RequerimentoSubmission> findByTemplateId(UUID templateId) {
+        return list("templateId", templateId);
+    }
+
+    public List<RequerimentoSubmission> findByUsuario(UUID usuarioId) {
+        return list("usuario.id", usuarioId);
+    }
+
+    public List<RequerimentoSubmission> findByStatus(String status) {
+        return list("status", status);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\RequerimentoTemplateRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoTemplateRepository implements PanacheRepositoryBase<RequerimentoTemplate, UUID> {
+
+    public List<RequerimentoTemplate> findActive() {
+        return list("isActive = true");
+    }
+
+    public RequerimentoTemplate findById(UUID id) {
+        return find("id", id).firstResult();
+    }
+
+    public List<RequerimentoTemplate> findByCategory(String category) {
+        return list("category", category);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\UsuarioRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.Usuario;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class UsuarioRepository
+        implements PanacheRepositoryBase<Usuario, UUID> {
+
+    public Usuario findByEmail(String email) {
+        return find("email", email).firstResult();
+    }
+
+    public List<Usuario> findAtivos() {
+        return list("ativo", true);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\resources\RequerimentoSubmissionResource.java
+
+```java
+package org.femass.requerimento.resources;
+
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.mappers.RequerimentoSubmissionMapper;
+import org.femass.requerimento.services.RequerimentoSubmissionService;
+import org.femass.requerimento.services.RequerimentoTemplateService;
+
+import java.util.List;
+import java.util.UUID;
+
+@Path("/submissions")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class RequerimentoSubmissionResource {
+
+    @Inject
+    RequerimentoSubmissionService service;
+
+    @Inject
+    RequerimentoSubmissionMapper mapper;
+
+    @Inject
+    RequerimentoTemplateService templateService;
+
+    @POST
+    @RolesAllowed({"ALUNO", "PROFESSOR",})
+    public Response submit(RequerimentoSubmissionDTO dto) {
+
+        RequerimentoSubmission entity = mapper.toEntity(dto);
+        service.create(entity);
+
+        return Response.status(Response.Status.CREATED)
+                .entity(mapper.toDTO(entity, templateService.get(entity.templateId)))
+                .build();
+    }
+
+    @GET
+    @Path("/template/{templateId}")
+    @Authenticated
+    public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {
+        return service.findByTemplate(templateId)
+                .stream()
+                .map(submission -> mapper.toDTO(
+                        submission,
+                        templateService.get(submission.templateId)
+                ))
+                .toList();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Authenticated
+    public RequerimentoSubmissionDTO get(@PathParam("id") UUID id) {
+        RequerimentoSubmission submission = service.get(id);
+        return mapper.toDTO(submission, templateService.get(submission.templateId));
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\resources\RequerimentoTemplateResource.java
+
+```java
+package org.femass.requerimento.resources;
+
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.femass.requerimento.dtos.RequerimentoTemplateDTO;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.services.RequerimentoTemplateService;
+import org.femass.requerimento.mappers.RequerimentoTemplateMapper;
+
+import java.util.List;
+import java.util.UUID;
+
+@Path("/templates")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class RequerimentoTemplateResource {
+
+    @Inject
+    RequerimentoTemplateService service;
+
+    @Inject
+    RequerimentoTemplateMapper mapper;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public List<RequerimentoTemplateDTO> listActive() {
+        return service.listActive()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public RequerimentoTemplateDTO get(@PathParam("id") UUID id) {
+        return mapper.toDTO(service.get(id));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    public Response create(RequerimentoTemplateDTO dto) {
+
+        RequerimentoTemplate entity = mapper.toEntity(dto);
+        service.create(entity);
+
+        return Response.status(Response.Status.CREATED)
+                .entity(mapper.toDTO(entity))
+                .build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    public Response update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
+
+        RequerimentoTemplate entity = mapper.toEntity(dto);
+        entity.id = id;
+
+        return Response.ok(
+                mapper.toDTO(service.update(entity))
+        ).build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\CurrentUserService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.femass.requerimento.entities.IdentidadeUsuario;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
+
+@ApplicationScoped
+public class CurrentUserService {
+
+    @Inject
+    JsonWebToken jwt;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeUsuarioRepository;
+
+    public Usuario get() {
+        String externalId = jwt.getSubject();
+
+        IdentidadeUsuario identidade =
+                identidadeUsuarioRepository
+                        .findByProviderAndExternalId("keycloak", externalId);
+
+        if (identidade == null) {
+            throw new IllegalStateException(
+                    "Usuário autenticado não possui identidade cadastrada"
+            );
+        }
+
+        return identidade.usuario;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\RequerimentoSubmissionService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
+import org.femass.requerimento.repositories.RequerimentoSubmissionRepository;
+import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
+import org.femass.requerimento.validators.RequerimentoSubmissionValidator;
+import io.quarkus.security.identity.SecurityIdentity;
+
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoSubmissionService {
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    @Inject
+    RequerimentoSubmissionRepository repository;
+
+    @Inject
+    RequerimentoSubmissionValidator validator;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeUsuarioRepository;
+
+    @Inject
+    RequerimentoTemplateRepository templateRepository;
+
+    @Inject
+    CurrentUserService currentUserService;
+
+    public RequerimentoSubmission get(UUID id) {
+        return repository.findById(id);
+    }
+
+    public List<RequerimentoSubmission> findByTemplate(UUID templateId) {
+        return repository.findByTemplateId(templateId);
+    }
+
+    @Transactional
+    public RequerimentoSubmission create(RequerimentoSubmission entity) {
+        Usuario user = currentUserService.get();
+        
+        RequerimentoTemplate template =
+                templateRepository.findById(entity.templateId);
+
+        if (template == null) {
+            throw new RuntimeException("Template não encontrado");
+        }
+
+        validator.validate(template, entity);
+
+        entity.id = UUID.randomUUID();
+        entity.createdAt = Instant.now();
+        entity.status = "pending";
+        entity.usuario = user;
+        entity.answers = buildAnswerSnapshot(template, entity.data);
+
+        repository.persist(entity);
+
+        return entity;
+    }
+
+    private List<Map<String, Object>> buildAnswerSnapshot(
+            RequerimentoTemplate template,
+            Map<String, Object> data
+    ) {
+        if (template.fields == null || data == null) {
+            return List.of();
+        }
+
+        return template.fields.stream()
+                .sorted(Comparator.comparingInt(this::position))
+                .map(field -> {
+                    String fieldKey = stringValue(field.get("fieldKey"));
+                    String label = stringValue(field.get("label"));
+                    if (fieldKey == null || !data.containsKey(fieldKey)) {
+                        return null;
+                    }
+
+                    Map<String, Object> answer = new HashMap<>();
+                    answer.put("fieldKey", fieldKey);
+                    answer.put("label", field.getOrDefault("label", label));
+                    answer.put("value", data.get(fieldKey));
+                    return answer;
+                })
+                .filter(answer -> answer != null)
+                .toList();
+    }
+
+    private int position(Map<String, Object> field) {
+        Object value = field.get("position");
+        return value instanceof Number number
+                ? number.intValue()
+                : Integer.MAX_VALUE;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    @Transactional
+    public void updateStatus(UUID id, String status) {
+
+        RequerimentoSubmission db = repository.findById(id);
+
+        if (db == null) {
+            throw new RuntimeException("Submission not found");
+        }
+
+        db.status = status;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\RequerimentoTemplateService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
+import org.femass.requerimento.validators.RequerimentoTemplateValidator;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoTemplateService {
+
+    @Inject
+    RequerimentoTemplateRepository repository;
+
+    @Inject
+    RequerimentoTemplateValidator validator;
+
+    public List<RequerimentoTemplate> listActive() {
+        return repository.findActive();
+    }
+
+    public RequerimentoTemplate get(UUID id) {
+        return repository.findById(id);
+    }
+
+    @Transactional
+    public RequerimentoTemplate create(RequerimentoTemplate entity) {
+
+        validator.validateFields(entity.fields);
+
+        entity.id = UUID.randomUUID();
+
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
+        entity.createdAt = Instant.now();
+        entity.updatedAt = Instant.now();
+        entity.isActive = false;
+        entity.version = null;
+
+        repository.persist(entity);
+
+        return entity;
+    }
+
+    @Transactional
+    public RequerimentoTemplate update(RequerimentoTemplate entity) {
+
+        RequerimentoTemplate db = repository.findById(entity.id);
+
+        if (db == null) {
+            throw new RuntimeException("Template not found");
+        }
+
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
+        db.name = entity.name;
+        db.description = entity.description;
+        db.category = entity.category;
+        db.fields = entity.fields;
+        db.updatedAt = Instant.now();
+
+        return db;
+    }
+
+    @Transactional
+    public void deactivate(UUID id) {
+
+        RequerimentoTemplate db = repository.findById(id);
+
+        if (db != null) {
+            db.isActive = false;
+            db.updatedAt = Instant.now();
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\UsuarioService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+import org.femass.requerimento.entities.*;
+import org.femass.requerimento.repositories.*;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class UsuarioService {
+
+    @Inject
+    UsuarioRepository usuarioRepository;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeRepository;
+
+    @Inject
+    PapelRepository papelRepository;
+
+    @Transactional
+    public Usuario criarOuObterPorIdentidade(
+            String provider,
+            String externalId,
+            String nome,
+            String email
+    ) {
+
+        IdentidadeUsuario identidade =
+                identidadeRepository.findByProviderAndExternalId(
+                        provider,
+                        externalId
+                );
+
+        if (identidade != null) {
+            return identidade.usuario;
+        }
+
+        Usuario usuario = new Usuario();
+
+        usuario.nome = nome;
+        usuario.email = email;
+        usuario.ativo = true;
+
+        usuario.adicionarIdentidade(
+                provider,
+                externalId
+        );
+
+        usuarioRepository.persist(usuario);
+
+        return usuario;
+    }
+
+    @Transactional
+    public void adicionarPapel(
+            UUID usuarioId,
+            String nomePapel
+    ) {
+
+        Usuario usuario =
+                usuarioRepository.findById(usuarioId);
+
+        if (usuario == null) {
+            throw new RuntimeException("Usuário não encontrado");
+        }
+
+        Papel papel =
+                papelRepository.findByNome(nomePapel);
+
+        if (papel == null) {
+            throw new RuntimeException(
+                    "Papel não encontrado: " + nomePapel
+            );
+        }
+
+        boolean possuiPapel = usuario.papeis.stream()
+                .anyMatch(
+                        up -> up.papel.id.equals(papel.id)
+                );
+
+        if (!possuiPapel) {
+            usuario.adicionarPapel(papel);
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\validators\RequerimentoSubmissionValidator.java
+
+```java
+package org.femass.requerimento.validators;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@ApplicationScoped
+public class RequerimentoSubmissionValidator {
+
+    public void validate(RequerimentoTemplate template, RequerimentoSubmission submission) {
+
+        Map<String, Object> data = submission.data;
+
+        List<Map<String, Object>> fields = template.fields;
+
+        Set<String> templateFieldKeys = fields.stream()
+                .map(f -> (String) f.get("fieldKey"))
+                .collect(Collectors.toSet());
+
+        // 1. campos desconhecidos
+        for (String key : data.keySet()) {
+            if (!templateFieldKeys.contains(key)) {
+                throw new RuntimeException("Campo inválido: " + key);
+            }
+        }
+
+        // 2. obrigatórios
+        for (Map<String, Object> field : fields) {
+
+            String key = (String) field.get("fieldKey");
+            Boolean required = (Boolean) field.get("required");
+
+            if (Boolean.TRUE.equals(required)) {
+
+                Object value = data.get(key);
+
+                if (value == null || value.toString().isBlank()) {
+                    throw new RuntimeException("Campo obrigatório: " + key);
+                }
+            }
+        }
+
+        // 3. validação por tipo
+        for (Map<String, Object> field : fields) {
+
+            String key = (String) field.get("fieldKey");
+            String type = (String) field.get("type");
+
+            Object value = data.get(key);
+            if (value == null) continue;
+
+            validateType(key, type, value, field);
+        }
+    }
+
+    private void validateType(String key, String type, Object value, Map<String, Object> field) {
+
+        switch (type) {
+
+            case "number" -> {
+                try {
+                    Double.parseDouble(value.toString());
+                } catch (Exception e) {
+                    throw new RuntimeException("Campo deve ser número: " + key);
+                }
+            }
+
+            case "email" -> {
+                if (!value.toString().contains("@")) {
+                    throw new RuntimeException("Email inválido: " + key);
+                }
+            }
+
+            case "date" -> {
+                try {
+                    java.time.Instant.parse(value.toString());
+                } catch (Exception e) {
+                    throw new RuntimeException("Data inválida: " + key);
+                }
+            }
+
+            case "select" -> {
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> options =
+                        (List<Map<String, Object>>) field.get("options");
+
+                boolean valid = options != null &&
+                        options.stream()
+                                .map(opt -> String.valueOf(opt.get("value")))
+                                .anyMatch(v -> v.equals(value.toString()));
+
+                if (!valid) {
+                    throw new RuntimeException("Valor inválido para select: " + key);
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\validators\RequerimentoTemplateValidator.java
+
+```java
+package org.femass.requerimento.validators;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@ApplicationScoped
+public class RequerimentoTemplateValidator {
+
+    public void validateFields(List<Map<String, Object>> fields) {
+
+        if (fields == null || fields.isEmpty()) {
+            throw new RuntimeException("Template deve ter pelo menos um campo");
+        }
+
+        Set<String> keys = new HashSet<>();
+
+        for (Map<String, Object> field : fields) {
+
+            String key = (String) field.get("fieldKey");
+
+            // 1. null / vazio primeiro (OBRIGATÓRIO)
+            if (key == null || key.isBlank()) {
+                throw new RuntimeException("fieldKey não pode ser vazio");
+            }
+
+            // 2. formato válido depois (seguro)
+            if (!key.matches("^[a-z0-9_]+$")) {
+                throw new RuntimeException("fieldKey inválido: " + key);
+            }
+
+            // 3. unicidade
+            if (!keys.add(key)) {
+                throw new RuntimeException("fieldKey duplicado: " + key);
+            }
+
+            // 4. type obrigatório
+            String type = (String) field.get("type");
+            if (type == null || type.isBlank()) {
+                throw new RuntimeException("type obrigatório para fieldKey: " + key);
+            }
+
+            // 5. label obrigatório
+            String label = (String) field.get("label");
+            if (label == null || label.isBlank()) {
+                throw new RuntimeException("label obrigatório para fieldKey: " + key);
+            }
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\resources\application.properties
+
+```properties
+# URL do banco (altere host, port, database)
+quarkus.datasource.db-kind=postgresql
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/femass-requerimento
+quarkus.datasource.username=postgres
+quarkus.datasource.password=femass-requerimento
+
+quarkus.hibernate-orm.log.sql=true
+quarkus.hibernate-orm.log.format-sql=true
+
+# CORS (dev local front-end)
+quarkus.http.cors.enabled=true
+quarkus.http.cors.origins=http://localhost:5173
+quarkus.http.cors.methods=GET,POST,PUT,DELETE,OPTIONS
+quarkus.http.cors.headers=authorization,content-type,accept,origin
+quarkus.http.cors.exposed-headers=authorization,location,content-type,accept
+quarkus.http.cors.access-control-max-age=24H
+quarkus.http.cors.access-control-allow-credentials=true
+
+quarkus.hibernate-orm.schema-management.strategy=update
+%test.quarkus.hibernate-orm.schema-management.strategy=drop-and-create
+
+
+# OIDC / Keycloak
+# Em execucao local, o Keycloak e publicado pelo Docker Compose na porta 8130.
+# Dentro do Compose, QUARKUS_OIDC_AUTH_SERVER_URL aponta para keycloak:8080.
+quarkus.oidc.auth-server-url=http://localhost:8130/realms/femass
+quarkus.oidc.client-id=backend-service
+quarkus.oidc.application-type=service
+quarkus.oidc.token.issuer=http://localhost:8130/realms/femass
+quarkus.oidc.token.audience=backend-service
+quarkus.oidc.roles.role-claim-path=realm_access/roles
+quarkus.oidc.connection-delay=20S
+
+# Os testes unitarios atuais nao dependem de um provedor OIDC externo.
+%test.quarkus.oidc.enabled=false
+quarkus.datasource.devservices.enabled=false
+
+# Dev logging: be more verbose for troubleshooting
+quarkus.log.level=INFO
+quarkus.log.category."org.petrohub".level=INFO
+quarkus.log.category."io.quarkus.scheduler".level=DEBUG
+quarkus.log.category."io.quarkus.oidc".level=DEBUG
+```
+
+---
+
+ARQUIVO: main\resources\import.sql
+
+```sql
+INSERT INTO papel (id, nome, descricao)
+VALUES
+    (1, 'ADMIN', 'Administrador'),
+    (2, 'PROFESSOR', 'professor'),
+    (3, 'COORDENADOR', 'coordenador'),
+    (4, 'DIRETOR', 'diretor'),
+    (5, 'SECRETARIA', 'Secretaria');
+```
+
+---
+
+ARQUIVO: projeto.txt
+
+```txt
+PROJETO - ESTRUTURA E CONTEÚDO
+
+ESTRUTURA DE PASTAS
+./
+  main/
+  test/
+  main/
+    docker/
+    java/
+    resources/
+    docker/
+    java/
+      org/
+      org/
+        femass/
+        femass/
+          requerimento/
+          requerimento/
+            dtos/
+            entities/
+            exceptions/
+            mappers/
+            repositories/
+            resources/
+            services/
+            validators/
+            dtos/
+            entities/
+              enum/
+              enum/
+            exceptions/
+            mappers/
+            repositories/
+            resources/
+            services/
+            validators/
+    resources/
+  test/
+    java/
+    java/
+      org/
+      org/
+        femass/
+        femass/
+          requerimento/
+          requerimento/
+            mappers/
+            mappers/
+
+
+CONTEÚDO DOS ARQUIVOS
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\ErrorDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+
+public class ErrorDTO {
+
+    public int status;
+    public String error;
+    public String message;
+    public String path;
+    public Instant timestamp;
+
+    public ErrorDTO(
+            int status,
+            String error,
+            String message,
+            String path
+    ) {
+        this.status = status;
+        this.error = error;
+        this.message = message;
+        this.path = path;
+        this.timestamp = Instant.now();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoSubmissionAnswerDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+public class RequerimentoSubmissionAnswerDTO {
+    public String fieldKey;
+    public String label;
+    public Object value;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoSubmissionDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+public class RequerimentoSubmissionDTO {
+    public UUID id;
+    public UUID templateId;
+    public String usuarioId;
+    public String status;
+    public Instant createdAt;
+
+    public Map<String, Object> data;
+    public List<RequerimentoSubmissionAnswerDTO> answers;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoTemplateDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+public class  RequerimentoTemplateDTO {
+    public UUID id;
+    public String name;
+    public String description;
+    public String category;
+    public Integer version;
+    public Boolean isActive;
+    public List<RequerimentoTemplateFieldDTO> fields;
+    public Instant createdAt;
+    public Instant updatedAt;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\RequerimentoTemplateFieldDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+import java.util.List;
+
+public class RequerimentoTemplateFieldDTO {
+    public String id;
+    public String fieldKey;
+    public String label;
+    public String type;
+    public Boolean required;
+    public String placeholder;
+    public String description;
+    public List<SelectOptionDTO> options;
+    public Integer position;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\dtos\SelectOptionDTO.java
+
+```java
+package org.femass.requerimento.dtos;
+
+public class SelectOptionDTO {
+    public String label;
+    public String value;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\IdentidadeUsuario.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.UUID;
+
+@Entity
+@Table(
+        name = "identidade_usuario",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_identidade_provider_external",
+                        columnNames = {"provider", "externalId"}
+                )
+        }
+)
+public class IdentidadeUsuario {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "usuario_id",
+            nullable = false
+    )
+    public Usuario usuario;
+
+    @Column(nullable = false, length = 50)
+    public String provider;
+
+    @Column(nullable = false, length = 255)
+    public String externalId;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\Papel.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(
+        name = "papel",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_papel_nome",
+                        columnNames = "nome"
+                )
+        }
+)
+public class Papel {
+    @Id
+    public Long id;
+
+    @Column(nullable = false, length = 50)
+    public String nome;
+
+    @Column(length = 255)
+    public String descricao;
+
+    @OneToMany(mappedBy = "papel")
+    public Set<UsuarioPapel> usuarios = new HashSet<>();
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\RequerimentoSubmission.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Entity
+@Table(name = "requerimento_submission")
+public class RequerimentoSubmission {
+
+    @Id
+    public UUID id;
+
+    public UUID templateId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    public Usuario usuario;
+
+    public String status;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public Map<String, Object> data;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public List<Map<String, Object>> answers;
+
+    public Instant createdAt;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\RequerimentoTemplate.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Entity
+@Table(name = "requerimento_template")
+public class RequerimentoTemplate {
+
+    @Id
+    public UUID id;
+
+    public String name;
+    public String description;
+    public String category;
+    public Integer version;
+    public Boolean isActive;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    public List<Map<String, Object>> fields;
+
+    public Instant createdAt;
+    public Instant updatedAt;
+}
+
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\Usuario.java
+
+```java
+
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@Entity
+
+@Table(
+    name = "usuario",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_usuario_email",
+            columnNames = "email"
+        )
+    }
+)public class Usuario {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @Column(nullable = false, length = 150)
+    public String nome;
+
+    @Column(nullable = false, length = 150)
+    public String email;
+
+    @Column(nullable = false)
+    public Boolean ativo = true;
+
+    @Column(nullable = false)
+    public Instant createdAt;
+
+    public Instant updatedAt;
+
+    @OneToMany(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public Set<IdentidadeUsuario> identidades = new HashSet<>();
+
+    @OneToMany(
+            mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    public Set<UsuarioPapel> papeis = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+
+        if (ativo == null) {
+            ativo = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
+
+    public void adicionarIdentidade(
+            String provider,
+            String externalId
+    ) {
+        IdentidadeUsuario identidade = new IdentidadeUsuario();
+
+        identidade.usuario = this;
+        identidade.provider = provider;
+        identidade.externalId = externalId;
+
+        identidades.add(identidade);
+    }
+
+    public void adicionarPapel(Papel papel) {
+        UsuarioPapel usuarioPapel = new UsuarioPapel();
+
+        usuarioPapel.usuario = this;
+        usuarioPapel.papel = papel;
+
+        papeis.add(usuarioPapel);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\UsuarioPapel.java
+
+```java
+package org.femass.requerimento.entities;
+
+import jakarta.persistence.*;
+
+import java.util.UUID;
+
+@Entity
+@Table(
+        name = "usuario_papel",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_usuario_papel",
+                        columnNames = {"usuario_id", "papel_id"}
+                )
+        }
+)
+public class UsuarioPapel {
+
+    @Id
+    @GeneratedValue
+    public UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "usuario_id",
+            nullable = false
+    )
+    public Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "papel_id",
+            nullable = false
+    )
+    public Papel papel;
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\entities\enum\PapelEnum.java
+
+```java
+public enum PapelEnum {
+
+    ADMIN(1L),
+    SERVIDOR(2L),
+    ALUNO(3L),
+    ANALISTA(4L);
+
+    private final Long id;
+
+    PapelEnum(Long id) {
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\AuthorizationException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class AuthorizationException extends RuntimeException {
+
+    public  AuthorizationException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\AuthorizationExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class AuthorizationExceptionMapper
+        implements ExceptionMapper<BusinessValidationException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(BusinessValidationException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.FORBIDDEN.getStatusCode(),
+                "Forbidden",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.FORBIDDEN)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\BusinessValidationException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class BusinessValidationException extends RuntimeException {
+
+    public BusinessValidationException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\BusinessValidationExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class BusinessValidationExceptionMapper
+        implements ExceptionMapper<BusinessValidationException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(BusinessValidationException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.BAD_REQUEST.getStatusCode(),
+                "Bad Request",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\ResourceNotFoundException.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\exceptions\ResourceNotFoundExceptionMapper.java
+
+```java
+package org.femass.requerimento.exceptions;
+
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.femass.requerimento.dtos.ErrorDTO;
+
+@Provider
+public class ResourceNotFoundExceptionMapper
+        implements ExceptionMapper<ResourceNotFoundException> {
+
+    @Context
+    UriInfo uriInfo;
+
+    @Override
+    public Response toResponse(ResourceNotFoundException exception) {
+
+        ErrorDTO error = new ErrorDTO(
+                Response.Status.NOT_FOUND.getStatusCode(),
+                "Not Found",
+                exception.getMessage(),
+                uriInfo.getPath()
+        );
+
+        return Response.status(Response.Status.NOT_FOUND)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(error)
+                .build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\mappers\RequerimentoSubmissionMapper.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.dtos.RequerimentoSubmissionAnswerDTO;
+import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+@ApplicationScoped
+public class RequerimentoSubmissionMapper {
+
+    public RequerimentoSubmissionDTO toDTO(RequerimentoSubmission entity) {
+        return toDTO(entity, null);
+    }
+
+    public RequerimentoSubmissionDTO toDTO(
+            RequerimentoSubmission entity,
+            RequerimentoTemplate template
+    ) {
+        RequerimentoSubmissionDTO dto = new RequerimentoSubmissionDTO();
+
+        dto.id = entity.id;
+        dto.templateId = entity.templateId;
+        dto.usuarioId = entity.usuario.id != null ? entity.usuario.id.toString() : null;
+        dto.status = entity.status;
+        dto.createdAt = entity.createdAt;
+
+        dto.data = entity.data;
+        dto.answers = mapAnswers(entity.data, entity.answers, template);
+
+        return dto;
+    }
+
+    private List<RequerimentoSubmissionAnswerDTO> mapAnswers(
+            Map<String, Object> data,
+            List<Map<String, Object>> answerSnapshot,
+            RequerimentoTemplate template
+    ) {
+        if (answerSnapshot != null && !answerSnapshot.isEmpty()) {
+            return answerSnapshot.stream()
+                    .map(answer -> toAnswer(
+                            stringValue(answer.get("fieldKey")),
+                            stringValue(answer.get("label")),
+                            answer.get("value")
+                    ))
+                    .toList();
+        }
+
+        if (data == null || data.isEmpty()) {
+            return List.of();
+        }
+
+        if (template == null || template.fields == null) {
+            return data.entrySet().stream()
+                    .map(entry -> toAnswer(entry.getKey(), entry.getKey(), entry.getValue()))
+                    .toList();
+        }
+
+        return template.fields.stream()
+                .sorted(Comparator.comparingInt(this::position))
+                .map(field -> {
+                    String fieldKey = stringValue(field.get("fieldKey"));
+                    if (fieldKey == null || !data.containsKey(fieldKey)) {
+                        return null;
+                    }
+                    String label = stringValue(field.get("label"));
+                    return toAnswer(
+                            fieldKey,
+                            label == null || label.isBlank() ? fieldKey : label,
+                            data.get(fieldKey)
+                    );
+                })
+                .filter(answer -> answer != null)
+                .toList();
+    }
+
+    private RequerimentoSubmissionAnswerDTO toAnswer(
+            String fieldKey,
+            String label,
+            Object value
+    ) {
+        RequerimentoSubmissionAnswerDTO answer = new RequerimentoSubmissionAnswerDTO();
+        answer.fieldKey = fieldKey;
+        answer.label = label;
+        answer.value = value;
+        return answer;
+    }
+
+    private int position(Map<String, Object> field) {
+        Object value = field.get("position");
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    public RequerimentoSubmission toEntity(RequerimentoSubmissionDTO dto) {
+
+        RequerimentoSubmission entity = new RequerimentoSubmission();
+
+        entity.id = dto.id;
+        entity.templateId = dto.templateId;
+        entity.status = dto.status;
+        entity.createdAt = dto.createdAt;
+
+        entity.data = dto.data;
+
+        return entity;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\mappers\RequerimentoTemplateMapper.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.dtos.RequerimentoTemplateDTO;
+import org.femass.requerimento.dtos.RequerimentoTemplateFieldDTO;
+import org.femass.requerimento.dtos.SelectOptionDTO;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@ApplicationScoped
+public class RequerimentoTemplateMapper {
+
+    public RequerimentoTemplateDTO toDTO(RequerimentoTemplate entity) {
+        if (entity == null) return null;
+        RequerimentoTemplateDTO dto = new RequerimentoTemplateDTO();
+
+        dto.id = entity.id;
+        dto.name = entity.name;
+        dto.description = entity.description;
+        dto.category = entity.category;
+        dto.version = entity.version;
+        dto.isActive = entity.isActive;
+        dto.createdAt = entity.createdAt;
+        dto.updatedAt = entity.updatedAt;
+
+        dto.fields = entity.fields == null
+                ? List.of()
+                : entity.fields.stream()
+                .map(this::mapToFieldDTO)
+                .toList();
+
+        return dto;
+    }
+
+    public RequerimentoTemplate toEntity(RequerimentoTemplateDTO dto) {
+        if (dto == null) return null;
+        RequerimentoTemplate entity = new RequerimentoTemplate();
+
+        entity.id = dto.id;
+        entity.name = dto.name;
+        entity.description = dto.description;
+        entity.category = dto.category;
+        entity.version = dto.version;
+        entity.isActive = dto.isActive;
+        entity.createdAt = dto.createdAt;
+        entity.updatedAt = dto.updatedAt;
+
+        entity.fields = dto.fields == null
+                ? List.of()
+                : dto.fields.stream()
+                .map(this::mapToMap)
+                .toList();
+
+        return entity;
+    }
+
+
+    private RequerimentoTemplateFieldDTO mapToFieldDTO(Map<String, Object> map) {
+
+        RequerimentoTemplateFieldDTO dto = new RequerimentoTemplateFieldDTO();
+
+        dto.id = (String) map.get("id");
+        dto.fieldKey = (String) map.get("fieldKey");
+        dto.label = (String) map.get("label");
+        dto.type = (String) map.get("type");
+        dto.required = (Boolean) map.get("required");
+        dto.placeholder = (String) map.get("placeholder");
+        dto.description = (String) map.get("description");
+
+        Object position = map.get("position");
+        dto.position = toInteger(position);
+
+        dto.options = toOptions(map.get("options"));
+
+        return dto;
+    }
+
+    private Map<String, Object> mapToMap(RequerimentoTemplateFieldDTO dto) {
+
+        Map<String, Object> map = new HashMap<>();
+
+        if (dto.id != null) {
+            map.put("id", dto.id);
+        }
+        map.put("fieldKey", dto.fieldKey);
+        map.put("label", dto.label);
+        map.put("type", dto.type);
+        map.put("required", dto.required);
+        map.put("placeholder", dto.placeholder);
+        map.put("description", dto.description);
+        map.put("position", dto.position);
+        map.put("options", dto.options == null
+                ? List.of()
+                : dto.options.stream().map(this::optionToMap).toList());
+
+        return map;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal decimal) {
+            return decimal.intValueExact();
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(value.toString());
+    }
+
+    private List<SelectOptionDTO> toOptions(Object value) {
+        if (!(value instanceof List<?> options)) {
+            return List.of();
+        }
+
+        return options.stream()
+                .map(this::toOptionDTO)
+                .toList();
+    }
+
+    private SelectOptionDTO toOptionDTO(Object value) {
+        if (value instanceof SelectOptionDTO option) {
+            return option;
+        }
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new IllegalArgumentException("Opção de campo inválida");
+        }
+
+        SelectOptionDTO option = new SelectOptionDTO();
+        option.label = stringValue(map.get("label"));
+        option.value = stringValue(map.get("value"));
+        return option;
+    }
+
+    private Map<String, Object> optionToMap(SelectOptionDTO option) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("label", option.label);
+        map.put("value", option.value);
+        return map;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\IdentidadeUsuarioRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.IdentidadeUsuario;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class IdentidadeUsuarioRepository
+        implements PanacheRepositoryBase<IdentidadeUsuario, UUID> {
+
+    public IdentidadeUsuario findByProviderAndExternalId(
+            String provider,
+            String externalId
+    ) {
+        return find(
+                "provider = ?1 and externalId = ?2",
+                provider,
+                externalId
+        ).firstResult();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\PapelRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.Papel;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class PapelRepository
+        implements PanacheRepositoryBase<Papel, UUID> {
+
+    public Papel findByNome(String nome) {
+        return find("nome", nome).firstResult();
+    }
+    public Papel findById(Long id) {
+        return find("id", id).firstResult();
+    }
+
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\RequerimentoSubmissionRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoSubmissionRepository implements PanacheRepositoryBase<RequerimentoSubmission, UUID> {
+
+    public List<RequerimentoSubmission> findByTemplateId(UUID templateId) {
+        return list("templateId", templateId);
+    }
+
+    public List<RequerimentoSubmission> findByUsuario(UUID usuarioId) {
+        return list("usuario.id", usuarioId);
+    }
+
+    public List<RequerimentoSubmission> findByStatus(String status) {
+        return list("status", status);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\RequerimentoTemplateRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoTemplateRepository implements PanacheRepositoryBase<RequerimentoTemplate, UUID> {
+
+    public List<RequerimentoTemplate> findActive() {
+        return list("isActive = true");
+    }
+
+    public RequerimentoTemplate findById(UUID id) {
+        return find("id", id).firstResult();
+    }
+
+    public List<RequerimentoTemplate> findByCategory(String category) {
+        return list("category", category);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\repositories\UsuarioRepository.java
+
+```java
+package org.femass.requerimento.repositories;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.Usuario;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class UsuarioRepository
+        implements PanacheRepositoryBase<Usuario, UUID> {
+
+    public Usuario findByEmail(String email) {
+        return find("email", email).firstResult();
+    }
+
+    public List<Usuario> findAtivos() {
+        return list("ativo", true);
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\resources\RequerimentoSubmissionResource.java
+
+```java
+package org.femass.requerimento.resources;
+
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.mappers.RequerimentoSubmissionMapper;
+import org.femass.requerimento.services.RequerimentoSubmissionService;
+import org.femass.requerimento.services.RequerimentoTemplateService;
+
+import java.util.List;
+import java.util.UUID;
+
+@Path("/submissions")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class RequerimentoSubmissionResource {
+
+    @Inject
+    RequerimentoSubmissionService service;
+
+    @Inject
+    RequerimentoSubmissionMapper mapper;
+
+    @Inject
+    RequerimentoTemplateService templateService;
+
+    @POST
+    @RolesAllowed({"ALUNO", "PROFESSOR",})
+    public Response submit(RequerimentoSubmissionDTO dto) {
+
+        RequerimentoSubmission entity = mapper.toEntity(dto);
+        service.create(entity);
+
+        return Response.status(Response.Status.CREATED)
+                .entity(mapper.toDTO(entity, templateService.get(entity.templateId)))
+                .build();
+    }
+
+    @GET
+    @Path("/template/{templateId}")
+    @Authenticated
+    public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {
+        return service.findByTemplate(templateId)
+                .stream()
+                .map(submission -> mapper.toDTO(
+                        submission,
+                        templateService.get(submission.templateId)
+                ))
+                .toList();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Authenticated
+    public RequerimentoSubmissionDTO get(@PathParam("id") UUID id) {
+        RequerimentoSubmission submission = service.get(id);
+        return mapper.toDTO(submission, templateService.get(submission.templateId));
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\resources\RequerimentoTemplateResource.java
+
+```java
+package org.femass.requerimento.resources;
+
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.femass.requerimento.dtos.RequerimentoTemplateDTO;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.services.RequerimentoTemplateService;
+import org.femass.requerimento.mappers.RequerimentoTemplateMapper;
+
+import java.util.List;
+import java.util.UUID;
+
+@Path("/templates")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class RequerimentoTemplateResource {
+
+    @Inject
+    RequerimentoTemplateService service;
+
+    @Inject
+    RequerimentoTemplateMapper mapper;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public List<RequerimentoTemplateDTO> listActive() {
+        return service.listActive()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public RequerimentoTemplateDTO get(@PathParam("id") UUID id) {
+        return mapper.toDTO(service.get(id));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    public Response create(RequerimentoTemplateDTO dto) {
+
+        RequerimentoTemplate entity = mapper.toEntity(dto);
+        service.create(entity);
+
+        return Response.status(Response.Status.CREATED)
+                .entity(mapper.toDTO(entity))
+                .build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    public Response update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
+
+        RequerimentoTemplate entity = mapper.toEntity(dto);
+        entity.id = id;
+
+        return Response.ok(
+                mapper.toDTO(service.update(entity))
+        ).build();
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\CurrentUserService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.femass.requerimento.entities.IdentidadeUsuario;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
+
+@ApplicationScoped
+public class CurrentUserService {
+
+    @Inject
+    JsonWebToken jwt;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeUsuarioRepository;
+
+    public Usuario get() {
+        String externalId = jwt.getSubject();
+
+        IdentidadeUsuario identidade =
+                identidadeUsuarioRepository
+                        .findByProviderAndExternalId("keycloak", externalId);
+
+        if (identidade == null) {
+            throw new IllegalStateException(
+                    "Usuário autenticado não possui identidade cadastrada"
+            );
+        }
+
+        return identidade.usuario;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\RequerimentoSubmissionService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
+import org.femass.requerimento.repositories.RequerimentoSubmissionRepository;
+import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
+import org.femass.requerimento.validators.RequerimentoSubmissionValidator;
+import io.quarkus.security.identity.SecurityIdentity;
+
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoSubmissionService {
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    @Inject
+    RequerimentoSubmissionRepository repository;
+
+    @Inject
+    RequerimentoSubmissionValidator validator;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeUsuarioRepository;
+
+    @Inject
+    RequerimentoTemplateRepository templateRepository;
+
+    @Inject
+    CurrentUserService currentUserService;
+
+    public RequerimentoSubmission get(UUID id) {
+        return repository.findById(id);
+    }
+
+    public List<RequerimentoSubmission> findByTemplate(UUID templateId) {
+        return repository.findByTemplateId(templateId);
+    }
+
+    @Transactional
+    public RequerimentoSubmission create(RequerimentoSubmission entity) {
+        Usuario user = currentUserService.get();
+        
+        RequerimentoTemplate template =
+                templateRepository.findById(entity.templateId);
+
+        if (template == null) {
+            throw new RuntimeException("Template não encontrado");
+        }
+
+        validator.validate(template, entity);
+
+        entity.id = UUID.randomUUID();
+        entity.createdAt = Instant.now();
+        entity.status = "pending";
+        entity.usuario = user;
+        entity.answers = buildAnswerSnapshot(template, entity.data);
+
+        repository.persist(entity);
+
+        return entity;
+    }
+
+    private List<Map<String, Object>> buildAnswerSnapshot(
+            RequerimentoTemplate template,
+            Map<String, Object> data
+    ) {
+        if (template.fields == null || data == null) {
+            return List.of();
+        }
+
+        return template.fields.stream()
+                .sorted(Comparator.comparingInt(this::position))
+                .map(field -> {
+                    String fieldKey = stringValue(field.get("fieldKey"));
+                    String label = stringValue(field.get("label"));
+                    if (fieldKey == null || !data.containsKey(fieldKey)) {
+                        return null;
+                    }
+
+                    Map<String, Object> answer = new HashMap<>();
+                    answer.put("fieldKey", fieldKey);
+                    answer.put("label", field.getOrDefault("label", label));
+                    answer.put("value", data.get(fieldKey));
+                    return answer;
+                })
+                .filter(answer -> answer != null)
+                .toList();
+    }
+
+    private int position(Map<String, Object> field) {
+        Object value = field.get("position");
+        return value instanceof Number number
+                ? number.intValue()
+                : Integer.MAX_VALUE;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    @Transactional
+    public void updateStatus(UUID id, String status) {
+
+        RequerimentoSubmission db = repository.findById(id);
+
+        if (db == null) {
+            throw new RuntimeException("Submission not found");
+        }
+
+        db.status = status;
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\RequerimentoTemplateService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
+import org.femass.requerimento.validators.RequerimentoTemplateValidator;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class RequerimentoTemplateService {
+
+    @Inject
+    RequerimentoTemplateRepository repository;
+
+    @Inject
+    RequerimentoTemplateValidator validator;
+
+    public List<RequerimentoTemplate> listActive() {
+        return repository.findActive();
+    }
+
+    public RequerimentoTemplate get(UUID id) {
+        return repository.findById(id);
+    }
+
+    @Transactional
+    public RequerimentoTemplate create(RequerimentoTemplate entity) {
+
+        validator.validateFields(entity.fields);
+
+        entity.id = UUID.randomUUID();
+
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
+        entity.createdAt = Instant.now();
+        entity.updatedAt = Instant.now();
+        entity.isActive = false;
+        entity.version = null;
+
+        repository.persist(entity);
+
+        return entity;
+    }
+
+    @Transactional
+    public RequerimentoTemplate update(RequerimentoTemplate entity) {
+
+        RequerimentoTemplate db = repository.findById(entity.id);
+
+        if (db == null) {
+            throw new RuntimeException("Template not found");
+        }
+
+        entity.fields.forEach(field -> {
+            if (!field.containsKey("id")) {
+                field.put("id", UUID.randomUUID().toString());
+            }
+        });
+
+        db.name = entity.name;
+        db.description = entity.description;
+        db.category = entity.category;
+        db.fields = entity.fields;
+        db.updatedAt = Instant.now();
+
+        return db;
+    }
+
+    @Transactional
+    public void deactivate(UUID id) {
+
+        RequerimentoTemplate db = repository.findById(id);
+
+        if (db != null) {
+            db.isActive = false;
+            db.updatedAt = Instant.now();
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\services\UsuarioService.java
+
+```java
+package org.femass.requerimento.services;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+import org.femass.requerimento.entities.*;
+import org.femass.requerimento.repositories.*;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class UsuarioService {
+
+    @Inject
+    UsuarioRepository usuarioRepository;
+
+    @Inject
+    IdentidadeUsuarioRepository identidadeRepository;
+
+    @Inject
+    PapelRepository papelRepository;
+
+    @Transactional
+    public Usuario criarOuObterPorIdentidade(
+            String provider,
+            String externalId,
+            String nome,
+            String email
+    ) {
+
+        IdentidadeUsuario identidade =
+                identidadeRepository.findByProviderAndExternalId(
+                        provider,
+                        externalId
+                );
+
+        if (identidade != null) {
+            return identidade.usuario;
+        }
+
+        Usuario usuario = new Usuario();
+
+        usuario.nome = nome;
+        usuario.email = email;
+        usuario.ativo = true;
+
+        usuario.adicionarIdentidade(
+                provider,
+                externalId
+        );
+
+        usuarioRepository.persist(usuario);
+
+        return usuario;
+    }
+
+    @Transactional
+    public void adicionarPapel(
+            UUID usuarioId,
+            String nomePapel
+    ) {
+
+        Usuario usuario =
+                usuarioRepository.findById(usuarioId);
+
+        if (usuario == null) {
+            throw new RuntimeException("Usuário não encontrado");
+        }
+
+        Papel papel =
+                papelRepository.findByNome(nomePapel);
+
+        if (papel == null) {
+            throw new RuntimeException(
+                    "Papel não encontrado: " + nomePapel
+            );
+        }
+
+        boolean possuiPapel = usuario.papeis.stream()
+                .anyMatch(
+                        up -> up.papel.id.equals(papel.id)
+                );
+
+        if (!possuiPapel) {
+            usuario.adicionarPapel(papel);
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: main\java\org\femass\requerimento\validators\RequerimentoSubmissionValidator.java
+
+```java
+package org.femass.requerimento.validators;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@ApplicationScoped
+public class RequerimentoSubmissionValidator {
+
+    public void validate(RequerimentoTemplate template, RequerimentoSubmission submission) {
+
+        Map<String, Object> data = submission.data;
+
+        List<Map<String, Object>> fields = template.fields;
+
+        Set<String> templateFieldKeys = fields.stream()
+                .map(f -> (String) f.get("fieldKey"))
+                .collect(Collectors.toSet());
+
+        // 1. campos desconhecidos
+        for (String key : data.keySet()) {
+            if (!templateFieldKeys.contains(key)) {
+                throw new RuntimeException("Campo inválido: " + key);
+            }
+        }
+
+        // 2. obrigatórios
+        for (Map<String, Object> field : fields) {
+
+            String key = (String) field.get("fieldKey");
+            Boolean required = (Boolean) field.get("required");
+
+            if (Boolean.TRUE.equals(required)) {
+
+                Object value = data.get(key);
+
+                if (value == null || value.toString().isBlank()) {
+                    throw new RuntimeException("Campo obrigatório: " + key);
+                }
+            }
+        }
+
+        // 3. validação por tipo
+        for (Map<String, Object> field : fields) {
+
+            String key = (String) field.get("fieldKey");
+            String type = (String) field.get("type");
+
+            Object value = data.get(key);
+            if (value == null) continue;
+
+            validateType(key, type, value, field);
+        }
+    }
+
+    private void validateType(String key, String type, Object value, Map<String, Object> field) {
+
+        switch (type) {
+
+            case "number" -> {
+                try {
+                    Double.parseDouble(value.toString());
+                } catch (Exception e) {
+                    throw new RuntimeException("Campo deve ser número: " + key);
+                }
+            }
+
+            case "email" -> {
+                if (!value.toString().contains("@")) {
+                    throw new RuntimeException("Email inválido: " + key);
+                }
+            }
+
+            case "date" -> {
+                try {
+                    java.time.Instant.parse(value.toString());
+                } catch (Exception e) {
+                    throw new RuntimeException("Data inválida: " + key);
+                }
+            }
+
+            case "select" -> {
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> options =
+                        (List<Map<String, Object>>) field.get("options");
+
+                boolean valid = options != null &&
+                        options.stream()
+                                .map(opt -> String.valueOf(opt.get("value")))
+                                .anyMatch(v -> v.equals(value.toString()));
+
+                if (!valid) {
+                    throw new RuntimeException("Valor inválido para select: " + key);
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+ARQUIVO: test\java\org\femass\requerimento\GreetingResourceIT.java
+
+```java
+package org.femass.requerimento;
+
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+
+@QuarkusIntegrationTest
+class GreetingResourceIT extends GreetingResourceTest {
+    // Execute the same tests but in packaged mode.
+}
+```
+
+---
+
+ARQUIVO: test\java\org\femass\requerimento\GreetingResourceTest.java
+
+```java
+package org.femass.requerimento;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
+
+@QuarkusTest
+class GreetingResourceTest {
+    @Test
+    void testHelloEndpoint() {
+        given()
+          .when().get("/hello")
+          .then()
+             .statusCode(200)
+             .body(is("Hello from Quarkus REST"));
+    }
+
+}
+```
+
+---
+
+ARQUIVO: test\java\org\femass\requerimento\mappers\RequerimentoSubmissionMapperTest.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class RequerimentoSubmissionMapperTest {
+
+    private final RequerimentoSubmissionMapper mapper =
+            new RequerimentoSubmissionMapper();
+
+    @Test
+    void shouldIncludeQuestionLabelWithAnswerInTemplateOrder() {
+        RequerimentoTemplate template = new RequerimentoTemplate();
+        template.fields = List.of(
+                Map.of(
+                        "fieldKey", "justificativa",
+                        "label", "Qual é a justificativa?",
+                        "position", 2
+                ),
+                Map.of(
+                        "fieldKey", "disciplina",
+                        "label", "Qual é a disciplina?",
+                        "position", 1
+                )
+        );
+
+        RequerimentoSubmission submission = new RequerimentoSubmission();
+        submission.data = Map.of(
+                "justificativa", "Consulta médica",
+                "disciplina", "Cálculo II"
+        );
+
+        RequerimentoSubmissionDTO dto = mapper.toDTO(submission, template);
+
+        assertEquals(2, dto.answers.size());
+        assertEquals("Qual é a disciplina?", dto.answers.getFirst().label);
+        assertEquals("Cálculo II", dto.answers.getFirst().value);
+        assertEquals("Qual é a justificativa?", dto.answers.get(1).label);
+        assertEquals("Consulta médica", dto.answers.get(1).value);
+    }
+
+    @Test
+    void shouldPreferStoredQuestionSnapshotOverCurrentTemplateLabel() {
+        RequerimentoTemplate template = new RequerimentoTemplate();
+        template.fields = List.of(Map.of(
+                "fieldKey", "motivo",
+                "label", "Pergunta editada",
+                "position", 1
+        ));
+
+        RequerimentoSubmission submission = new RequerimentoSubmission();
+        submission.data = Map.of("motivo", "Resposta");
+        submission.answers = List.of(Map.of(
+                "fieldKey", "motivo",
+                "label", "Pergunta original",
+                "value", "Resposta"
+        ));
+
+        RequerimentoSubmissionDTO dto = mapper.toDTO(submission, template);
+
+        assertEquals("Pergunta original", dto.answers.getFirst().label);
+        assertEquals("Resposta", dto.answers.getFirst().value);
+    }
+}
+```
+
+---
+
+ARQUIVO: test\java\org\femass\requerimento\mappers\RequerimentoTemplateMapperTest.java
+
+```java
+package org.femass.requerimento.mappers;
+
+import org.femass.requerimento.dtos.RequerimentoTemplateDTO;
+import org.femass.requerimento.dtos.RequerimentoTemplateFieldDTO;
+import org.femass.requerimento.dtos.SelectOptionDTO;
+import org.femass.requerimento.entities.RequerimentoTemplate;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class RequerimentoTemplateMapperTest {
+
+    private final RequerimentoTemplateMapper mapper = new RequerimentoTemplateMapper();
+
+    @Test
+    void mapsJsonbNumbersAndOptionsToDto() {
+        RequerimentoTemplate entity = new RequerimentoTemplate();
+        entity.fields = List.of(Map.of(
+                "id", "field-id",
+                "fieldKey", "finalidade",
+                "label", "Finalidade",
+                "type", "select",
+                "required", true,
+                "position", new BigDecimal("2"),
+                "options", List.of(Map.of("label", "Estágio", "value", "estagio"))
+        ));
+
+        RequerimentoTemplateFieldDTO field = mapper.toDTO(entity).fields.getFirst();
+
+        assertEquals(2, field.position);
+        assertEquals("field-id", field.id);
+        assertEquals("Estágio", field.options.getFirst().label);
+        assertEquals("estagio", field.options.getFirst().value);
+    }
+
+    @Test
+    void preservesFieldIdAndSerializesOptionsAsMaps() {
+        SelectOptionDTO option = new SelectOptionDTO();
+        option.label = "Emprego";
+        option.value = "emprego";
+
+        RequerimentoTemplateFieldDTO field = new RequerimentoTemplateFieldDTO();
+        field.id = "field-id";
+        field.fieldKey = "finalidade";
+        field.label = "Finalidade";
+        field.type = "select";
+        field.position = 1;
+        field.options = List.of(option);
+
+        RequerimentoTemplateDTO dto = new RequerimentoTemplateDTO();
+        dto.fields = List.of(field);
+
+        Map<String, Object> mappedField = mapper.toEntity(dto).fields.getFirst();
+        Map<?, ?> mappedOption = (Map<?, ?>) ((List<?>) mappedField.get("options")).getFirst();
+
+        assertEquals("field-id", mappedField.get("id"));
+        assertEquals("Emprego", mappedOption.get("label"));
+        assertEquals("emprego", mappedOption.get("value"));
+    }
+}
+```
+
