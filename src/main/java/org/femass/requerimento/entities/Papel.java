@@ -27,7 +27,4 @@ public class Papel {
 
     @Column(length = 255)
     public String descricao;
-
-    @OneToMany(mappedBy = "papel")
-    public Set<UsuarioPapel> usuarios = new HashSet<>();
 }
