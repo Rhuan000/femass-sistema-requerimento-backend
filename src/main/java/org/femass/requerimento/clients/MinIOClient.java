@@ -1,6 +1,7 @@
 package org.femass.requerimento.clients;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.ObjectWriteResponse;
@@ -57,6 +58,15 @@ public class MinIOClient {
 
     public String bucket() {
         return bucket;
+    }
+
+    public InputStream download(String objectName) throws Exception {
+        return client.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(objectName)
+                        .build()
+        );
     }
 
     public void delete(String objectName) throws Exception {

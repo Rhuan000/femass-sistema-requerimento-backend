@@ -11,6 +11,7 @@ import org.femass.requerimento.mappers.RequerimentoSubmissionMapper;
 import org.femass.requerimento.repositories.DocumentoRepository;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -44,6 +45,21 @@ public class DocumentoService {
         return mapper.toDocumentoDTO(documento);
     }
 
+    public DownloadedDocument download(UUID submissionId, UUID documentId) {
+        submissionService.getOwnedSubmission(submissionId);
+        Documento documento = repository.findByIdAndSubmissionId(documentId, submissionId);
+        if (documento == null) {
+            throw new ResourceNotFoundException("Documento não encontrado");
+        }
+
+        return new DownloadedDocument(
+                storageService.download(documento.objectName),
+                documento.nomeOriginal,
+                documento.contentType,
+                documento.tamanho
+        );
+    }
+
     @Transactional
     public void delete(UUID submissionId, UUID documentId) {
         RequerimentoSubmission draft = submissionService.getOwnedDraft(submissionId);
@@ -56,5 +72,13 @@ public class DocumentoService {
         draft.documentos.remove(documento);
         repository.delete(documento);
         draft.updatedAt = Instant.now();
+    }
+
+    public record DownloadedDocument(
+            InputStream content,
+            String nomeOriginal,
+            String contentType,
+            long tamanho
+    ) {
     }
 }

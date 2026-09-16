@@ -73,6 +73,14 @@ public class DocumentoStorageService {
         }
     }
 
+    public InputStream download(String objectName) {
+        try {
+            return minIOClient.download(objectName);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Não foi possível baixar o documento do MinIO", exception);
+        }
+    }
+
     private void validate(FileUpload file) {
         if (file == null || file.fileName() == null || file.fileName().isBlank()) {
             throw new BusinessValidationException("O documento é obrigatório");

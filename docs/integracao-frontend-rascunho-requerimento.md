@@ -142,7 +142,38 @@ A resposta é `201 Created` e contém o `id` necessário para excluir o document
 
 Para a interface, normalmente basta usar `id`, `nomeOriginal`, `contentType`, `tamanho` e `createdAt`. Os campos do MinIO não precisam ser armazenados pelo frontend.
 
-## 5. Excluir um documento
+## 5. Baixar um documento
+
+Na tela de detalhes, utilize os campos `id` do requerimento e `id` do documento para baixar o anexo:
+
+```http
+GET /submissions/{submissionId}/documents/{documentId}/download
+Authorization: Bearer <token>
+```
+
+O backend valida que o requerimento pertence ao usuário autenticado e devolve o conteúdo armazenado no MinIO. A resposta inclui o tipo do arquivo, seu tamanho e o cabeçalho `Content-Disposition: attachment` com o nome original.
+
+Exemplo usando Axios:
+
+```javascript
+async function baixarDocumento(submissionId, documento) {
+  const response = await api.get(
+    `/submissions/${submissionId}/documents/${documento.id}/download`,
+    { responseType: "blob" }
+  );
+
+  const url = URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = documento.nomeOriginal;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+Possíveis respostas: `200 OK`, `401 Unauthorized`, `403 Forbidden` quando o requerimento pertence a outro usuário e `404 Not Found` quando o requerimento ou documento não existe.
+
+## 6. Excluir um documento
 
 ```http
 DELETE /submissions/{submissionId}/documents/{documentId}
@@ -150,7 +181,7 @@ DELETE /submissions/{submissionId}/documents/{documentId}
 
 Em caso de sucesso, a resposta é `204 No Content`.
 
-## 6. Finalizar e enviar o requerimento
+## 7. Finalizar e enviar o requerimento
 
 Antes de finalizar, aguarde o último salvamento automático e todos os uploads pendentes. Depois execute:
 
@@ -191,7 +222,7 @@ Encontrou? usar o id retornado; não encontrou? POST /submissions
     ↓
 PUT /submissions/{id} → salvar respostas parciais
     ↓
-POST/DELETE /submissions/{id}/documents → gerenciar anexos
+POST/GET/DELETE /submissions/{id}/documents → gerenciar anexos
     ↓
 POST /submissions/{id}/submit
     ↓

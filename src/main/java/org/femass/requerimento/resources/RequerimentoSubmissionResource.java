@@ -12,7 +12,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.femass.requerimento.dtos.DocumentoUploadDTO;
 import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
 import org.femass.requerimento.entities.RequerimentoSubmission;
@@ -24,6 +26,8 @@ import org.femass.requerimento.services.RequerimentoTemplateService;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,6 +86,27 @@ public class RequerimentoSubmissionResource {
         return Response.status(Response.Status.CREATED).entity(document).build();
     }
 
+    @GET
+    @Path("/{id}/documents/{documentId}/download")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Authenticated
+    public Response downloadDocument(
+            @PathParam("id") UUID id,
+            @PathParam("documentId") UUID documentId
+    ) {
+        DocumentoService.DownloadedDocument document = documentoService.download(id, documentId);
+        StreamingOutput body = output -> {
+            try (var content = document.content()) {
+                content.transferTo(output);
+            }
+        };
+
+        return Response.ok(body, document.contentType())
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition(document.nomeOriginal()))
+                .header(HttpHeaders.CONTENT_LENGTH, document.tamanho())
+                .build();
+    }
+
     @DELETE
     @Path("/{id}/documents/{documentId}")
     //@RolesAllowed({"ALUNO", "PROFESSOR"})
@@ -118,5 +143,12 @@ public class RequerimentoSubmissionResource {
 
     private RequerimentoSubmissionDTO toDTO(RequerimentoSubmission submission) {
         return mapper.toDTO(submission, templateService.get(submission.templateId));
+    }
+
+    private String contentDisposition(String fileName) {
+        String safeName = fileName.replace("\r", "").replace("\n", "").replace("\"", "'");
+        String encodedName = URLEncoder.encode(safeName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        return "attachment; filename=\"" + safeName + "\"; filename*=UTF-8''" + encodedName;
     }
 }

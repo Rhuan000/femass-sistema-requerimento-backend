@@ -104,13 +104,18 @@ public class RequerimentoSubmissionService {
     }
 
     public RequerimentoSubmission getOwnedDraft(UUID id) {
+        RequerimentoSubmission submission = getOwnedSubmission(id);
+        if (!STATUS_RASCUNHO.equals(submission.status)) {
+            throw new BusinessValidationException("Somente requerimentos em rascunho podem ser alterados");
+        }
+        return submission;
+    }
+
+    public RequerimentoSubmission getOwnedSubmission(UUID id) {
         RequerimentoSubmission submission = get(id);
         Usuario currentUser = currentUserService.get();
         if (submission.usuario == null || !submission.usuario.id.equals(currentUser.id)) {
-            throw new AuthorizationException("Você não pode alterar este requerimento");
-        }
-        if (!STATUS_RASCUNHO.equals(submission.status)) {
-            throw new BusinessValidationException("Somente requerimentos em rascunho podem ser alterados");
+            throw new AuthorizationException("Você não pode acessar este requerimento");
         }
         return submission;
     }
