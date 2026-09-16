@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "form_submission")
+@Table(name = "requerimento_submission")
 public class RequerimentoSubmission {
 
     @Id
