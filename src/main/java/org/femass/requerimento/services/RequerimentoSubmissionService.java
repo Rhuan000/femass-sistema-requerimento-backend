@@ -43,6 +43,21 @@ public class RequerimentoSubmissionService {
         return repository.findByTemplateId(templateId);
     }
 
+    public RequerimentoSubmission findCurrentUserDraftByTemplate(UUID templateId) {
+        Usuario currentUser = currentUserService.get();
+        RequerimentoSubmission draft = repository.findDraftByTemplateAndUsuario(
+                templateId,
+                currentUser.id,
+                STATUS_RASCUNHO
+        );
+        if (draft == null) {
+            throw new ResourceNotFoundException(
+                    "Rascunho não encontrado para este usuário e template"
+            );
+        }
+        return draft;
+    }
+
     @Transactional
     public RequerimentoSubmission createDraft(RequerimentoSubmission entity) {
         if (entity.templateId == null) {

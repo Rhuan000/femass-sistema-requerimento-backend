@@ -94,6 +94,15 @@ public class RequerimentoSubmissionResource {
     }
 
     @GET
+    @Path("/draft/template/{templateId}")
+    @Authenticated
+    public RequerimentoSubmissionDTO currentUserDraftByTemplate(
+            @PathParam("templateId") UUID templateId
+    ) {
+        return toDTO(service.findCurrentUserDraftByTemplate(templateId));
+    }
+
+    @GET
     @Path("/template/{templateId}")
     @Authenticated
     public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {

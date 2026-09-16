@@ -1,6 +1,6 @@
 # Integração frontend — rascunho de requerimento
 
-Este fluxo permite criar o requerimento antes de o formulário estar completo. Assim que o usuário começar o preenchimento, o frontend deve criar um rascunho e guardar o `id` retornado para salvar respostas e gerenciar anexos.
+Este fluxo permite criar o requerimento antes de o formulário estar completo. Ao abrir um tipo de requerimento, o frontend deve primeiro consultar se o usuário autenticado já possui um rascunho daquele template. Assim, não é necessário guardar o `id` no `localStorage`.
 
 Todas as requisições devem enviar o token do usuário:
 
@@ -10,7 +10,41 @@ Authorization: Bearer <token>
 
 O usuário é identificado pelo token. O frontend não deve enviar `usuarioId`.
 
-## 1. Criar o rascunho
+## 1. Recuperar um rascunho existente
+
+Ao abrir o formulário de um template, consulte:
+
+```http
+GET /submissions/draft/template/{templateId}
+```
+
+O usuário é obtido pelo token. A consulta considera simultaneamente o `templateId`, o usuário autenticado e o status `RASCUNHO`.
+
+- `200 OK`: retorna o rascunho existente. Use o campo `id` retornado para salvar respostas e gerenciar documentos.
+- `404 Not Found`: não existe rascunho para esse usuário e template; crie um usando o endpoint abaixo.
+
+Exemplo no frontend:
+
+```javascript
+async function obterOuCriarRascunho(templateId) {
+  try {
+    const { data } = await api.get(`/submissions/draft/template/${templateId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status !== 404) throw error;
+
+    const { data } = await api.post("/submissions", {
+      templateId,
+      data: {}
+    });
+    return data;
+  }
+}
+```
+
+O `id` pode permanecer no estado da tela ou ser colocado na rota. Se a página for recarregada, basta repetir a consulta pelo `templateId`.
+
+## 2. Criar o rascunho
 
 ```http
 POST /submissions
@@ -41,7 +75,7 @@ A resposta é `201 Created`:
 }
 ```
 
-O frontend deve guardar o `id` do rascunho enquanto estiver nessa tela. Preferencialmente, inclua esse UUID na rota da página para permitir a recuperação após uma atualização do navegador.
+O frontend usa o `id` do rascunho enquanto estiver nessa tela. Não é necessário persistir esse identificador no navegador, pois ele pode ser recuperado pelo template e pelo usuário autenticado.
 
 Para recarregar o rascunho e seus documentos:
 
@@ -49,7 +83,7 @@ Para recarregar o rascunho e seus documentos:
 GET /submissions/{submissionId}
 ```
 
-## 2. Salvar o preenchimento parcial
+## 3. Salvar o preenchimento parcial
 
 ```http
 PUT /submissions/{submissionId}
@@ -69,7 +103,7 @@ O objeto `data` enviado substitui os dados anteriormente salvos. Portanto, o fro
 
 Campos obrigatórios não são cobrados nesta etapa. É recomendável salvar automaticamente usando debounce, por exemplo, entre 500 e 1000 ms após a última alteração.
 
-## 3. Enviar um documento
+## 4. Enviar um documento
 
 ```http
 POST /submissions/{submissionId}/documents
@@ -108,7 +142,7 @@ A resposta é `201 Created` e contém o `id` necessário para excluir o document
 
 Para a interface, normalmente basta usar `id`, `nomeOriginal`, `contentType`, `tamanho` e `createdAt`. Os campos do MinIO não precisam ser armazenados pelo frontend.
 
-## 4. Excluir um documento
+## 5. Excluir um documento
 
 ```http
 DELETE /submissions/{submissionId}/documents/{documentId}
@@ -116,7 +150,7 @@ DELETE /submissions/{submissionId}/documents/{documentId}
 
 Em caso de sucesso, a resposta é `204 No Content`.
 
-## 5. Finalizar e enviar o requerimento
+## 6. Finalizar e enviar o requerimento
 
 Antes de finalizar, aguarde o último salvamento automático e todos os uploads pendentes. Depois execute:
 
@@ -151,7 +185,9 @@ O frontend deve exibir a mensagem retornada pela API e manter o usuário na tela
 ```text
 Abrir formulário
     ↓
-POST /submissions → guardar submissionId
+GET /submissions/draft/template/{templateId}
+    ↓
+Encontrou? usar o id retornado; não encontrou? POST /submissions
     ↓
 PUT /submissions/{id} → salvar respostas parciais
     ↓
