@@ -10,13 +10,13 @@ import org.femass.requerimento.dtos.ErrorDTO;
 
 @Provider
 public class AuthorizationExceptionMapper
-        implements ExceptionMapper<BusinessValidationException> {
+        implements ExceptionMapper<AuthorizationException> {
 
     @Context
     UriInfo uriInfo;
 
     @Override
-    public Response toResponse(BusinessValidationException exception) {
+    public Response toResponse(AuthorizationException exception) {
 
         ErrorDTO error = new ErrorDTO(
                 Response.Status.FORBIDDEN.getStatusCode(),
