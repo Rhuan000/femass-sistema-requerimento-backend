@@ -32,13 +32,17 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class RequerimentoSubmissionResource {
 
-    @Inject RequerimentoSubmissionService service;
-    @Inject RequerimentoSubmissionMapper mapper;
-    @Inject RequerimentoTemplateService templateService;
-    @Inject DocumentoService documentoService;
+    @Inject
+    RequerimentoSubmissionService service;
+    @Inject
+    RequerimentoSubmissionMapper mapper;
+    @Inject
+    RequerimentoTemplateService templateService;
+    @Inject
+    DocumentoService documentoService;
 
     @POST
-    @RolesAllowed({"ALUNO", "PROFESSOR"})
+    //@RolesAllowed({"ALUNO", "PROFESSOR"})
     public Response createDraft(RequerimentoSubmissionDTO dto) {
         if (dto == null) {
             throw new BusinessValidationException("Os dados do rascunho são obrigatórios");
@@ -51,7 +55,7 @@ public class RequerimentoSubmissionResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"ALUNO", "PROFESSOR"})
+    //@RolesAllowed({"ALUNO", "PROFESSOR"})
     public RequerimentoSubmissionDTO saveDraft(
             @PathParam("id") UUID id,
             RequerimentoSubmissionDTO dto
@@ -61,7 +65,7 @@ public class RequerimentoSubmissionResource {
 
     @POST
     @Path("/{id}/submit")
-    @RolesAllowed({"ALUNO", "PROFESSOR"})
+    //@RolesAllowed({"ALUNO", "PROFESSOR"})
     public RequerimentoSubmissionDTO submit(@PathParam("id") UUID id) {
         return toDTO(service.submit(id));
     }
@@ -69,7 +73,7 @@ public class RequerimentoSubmissionResource {
     @POST
     @Path("/{id}/documents")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @RolesAllowed({"ALUNO", "PROFESSOR"})
+    //@RolesAllowed({"ALUNO", "PROFESSOR"})
     public Response uploadDocument(
             @PathParam("id") UUID id,
             @RestForm("file") FileUpload file
@@ -80,7 +84,7 @@ public class RequerimentoSubmissionResource {
 
     @DELETE
     @Path("/{id}/documents/{documentId}")
-    @RolesAllowed({"ALUNO", "PROFESSOR"})
+    //@RolesAllowed({"ALUNO", "PROFESSOR"})
     public Response deleteDocument(
             @PathParam("id") UUID id,
             @PathParam("documentId") UUID documentId

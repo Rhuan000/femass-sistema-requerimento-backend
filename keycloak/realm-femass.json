@@ -28,6 +28,10 @@
         "description": "Pode abrir novos requerimentos, solicitar abertura de novos templates, aprovar e reprovar requerimentos, acompanhar requerimentos próprios e responsável, fechar um requerimento responsável"
       },
       {
+        "name": "ORIENTADOR",
+        "description": "Pode orientar alunos e acompanhar os requerimentos sob sua orientacao"
+      },
+      {
         "name": "SECRETARIA",
         "description": "Pode solicitar abertura de novos templates, aprovar e reprovar requerimentos reponsáveis, acompanhar requerimentos reponsáveis e matérias, fechar requerimento responsável"
       },
@@ -128,6 +132,7 @@
       ]
     },
     {
+      "id": "30000000-0000-0000-0000-000000000003",
       "username": "professor.dev",
       "email": "professor.dev@femass.edu.br",
       "firstName": "Professor",
@@ -142,7 +147,8 @@
         }
       ],
       "realmRoles": [
-        "PROFESSOR"
+        "PROFESSOR",
+        "ORIENTADOR"
       ]
     },
     {

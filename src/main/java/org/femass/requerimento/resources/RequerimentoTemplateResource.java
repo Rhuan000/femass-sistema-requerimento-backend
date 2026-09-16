@@ -46,7 +46,7 @@ public class RequerimentoTemplateResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    //@RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
     public Response create(RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
@@ -61,7 +61,7 @@ public class RequerimentoTemplateResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
+    //@RolesAllowed({"PROFESSOR", "COORDENADOR", "DIRETOR", "SECRETARIA"})
     public Response update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
 
         RequerimentoTemplate entity = mapper.toEntity(dto);
