@@ -33,6 +33,18 @@ services:
       - femass-keycloak-data:/opt/keycloak/data
 
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
 
   backend:
     container_name: femass-requerimento-backend
@@ -57,6 +69,12 @@ services:
       QUARKUS_OIDC_TOKEN_ISSUER: "${QUARKUS_OIDC_TOKEN_ISSUER:-http://localhost:8130/realms/femass}"
       QUARKUS_OIDC_TOKEN_AUDIENCE: "${QUARKUS_OIDC_TOKEN_AUDIENCE:-backend-service}"
 
+      # MinIO
+      MINIO_ENDPOINT: "${MINIO_ENDPOINT:-http://minio:9000}"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-minioadmin}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-minioadmin123}"
+      MINIO_BUCKET: "${MINIO_BUCKET:-documentos}"
+
       # CORS (optional) - defaults to local frontend origin; set QUARKUS_HTTP_CORS_ORIGINS to override
       QUARKUS_HTTP_CORS: "${QUARKUS_HTTP_CORS:-true}"
       QUARKUS_HTTP_CORS_ORIGINS: "${QUARKUS_HTTP_CORS_ORIGINS:-http://localhost:5173}"
@@ -68,7 +86,10 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
+      minio:
+        condition: service_started
 
 volumes:
   femass-requerimento-data:
   femass-keycloak-data:
+  minio_data:
