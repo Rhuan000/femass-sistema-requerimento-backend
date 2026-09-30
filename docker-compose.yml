@@ -24,10 +24,10 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: "${KEYCLOAK_ADMIN_USERNAME:-admin}"
       KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
-      KC_HOSTNAME: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8130}"
+      KC_HOSTNAME: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8140}"
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports:
-      - "8130:8080"
+      - "8140:8080"
     volumes:
       - ./keycloak/realm-femass.json:/opt/keycloak/data/import/realm-femass.json:ro
       - femass-keycloak-data:/opt/keycloak/data
@@ -66,7 +66,7 @@ services:
       # OIDC (Keycloak) - valida tokens emitidos para a API
       QUARKUS_OIDC_AUTH_SERVER_URL: "${QUARKUS_OIDC_AUTH_SERVER_URL:-http://keycloak:8080/realms/femass}"
       QUARKUS_OIDC_CLIENT_ID: "${QUARKUS_OIDC_CLIENT_ID:-backend-service}"
-      QUARKUS_OIDC_TOKEN_ISSUER: "${QUARKUS_OIDC_TOKEN_ISSUER:-http://localhost:8130/realms/femass}"
+      QUARKUS_OIDC_TOKEN_ISSUER: "${QUARKUS_OIDC_TOKEN_ISSUER:-http://localhost:8140/realms/femass}"
       QUARKUS_OIDC_TOKEN_AUDIENCE: "${QUARKUS_OIDC_TOKEN_AUDIENCE:-backend-service}"
 
       # MinIO
