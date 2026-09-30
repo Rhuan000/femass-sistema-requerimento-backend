@@ -6,7 +6,7 @@ Este documento descreve como o frontend deve autenticar o usuário no mesmo Keyc
 
 | Item | Valor |
 | --- | --- |
-| Keycloak | `http://localhost:8130` |
+| Keycloak | `http://localhost:8140` |
 | Realm | `femass` |
 | Client do frontend | `femass-frontend` |
 | API | `http://localhost:8080` |
@@ -71,7 +71,7 @@ Variáveis locais:
 
 ```dotenv
 VITE_API_URL=http://localhost:8080
-VITE_KEYCLOAK_URL=http://localhost:8130
+VITE_KEYCLOAK_URL=http://localhost:8140
 VITE_KEYCLOAK_REALM=femass
 VITE_KEYCLOAK_CLIENT_ID=femass-frontend
 ```
