@@ -4,6 +4,7 @@ import org.femass.requerimento.entities.RequerimentoTemplate;
 import org.femass.requerimento.entities.TemplateStatus;
 import org.femass.requerimento.exceptions.BusinessValidationException;
 import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
+import org.femass.requerimento.validators.RequerimentoTemplateValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,9 @@ class TemplateStatusWorkflowTest {
         var field = RequerimentoTemplateService.class.getDeclaredField("repository");
         field.setAccessible(true);
         field.set(service, repository);
+        var validatorField = RequerimentoTemplateService.class.getDeclaredField("validator");
+        validatorField.setAccessible(true);
+        validatorField.set(service, mock(RequerimentoTemplateValidator.class));
         template = new RequerimentoTemplate();
         template.id = UUID.randomUUID();
         template.status = TemplateStatus.PENDENTE;
