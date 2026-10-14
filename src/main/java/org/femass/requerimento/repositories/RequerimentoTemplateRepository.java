@@ -11,7 +11,7 @@ import java.util.UUID;
 public class RequerimentoTemplateRepository implements PanacheRepositoryBase<RequerimentoTemplate, UUID> {
 
     public List<RequerimentoTemplate> findActive() {
-        return list("isActive = true");
+        return list("status", org.femass.requerimento.entities.TemplateStatus.ATIVO);
     }
 
     public RequerimentoTemplate findById(UUID id) {
