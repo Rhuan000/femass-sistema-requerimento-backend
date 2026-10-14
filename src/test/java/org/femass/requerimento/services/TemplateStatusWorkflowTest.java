@@ -3,6 +3,9 @@ package org.femass.requerimento.services;
 import org.femass.requerimento.entities.RequerimentoTemplate;
 import org.femass.requerimento.entities.TemplateStatus;
 import org.femass.requerimento.exceptions.BusinessValidationException;
+import org.femass.requerimento.exceptions.AuthorizationException;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.entities.Papel;
 import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
 import org.femass.requerimento.validators.RequerimentoTemplateValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +20,7 @@ class TemplateStatusWorkflowTest {
     RequerimentoTemplateService service;
     RequerimentoTemplateRepository repository;
     RequerimentoTemplate template;
+    CurrentUserService currentUser;
 
     @BeforeEach
     void setup() throws Exception {
@@ -30,12 +34,8 @@ class TemplateStatusWorkflowTest {
         validatorField.set(service, mock(RequerimentoTemplateValidator.class));
         var currentUserField = RequerimentoTemplateService.class.getDeclaredField("currentUserService");
         currentUserField.setAccessible(true);
-        CurrentUserService currentUser = mock(CurrentUserService.class);
-        var diretor = new org.femass.requerimento.entities.Usuario();
-        diretor.ativo = true;
-        var papel = new org.femass.requerimento.entities.Papel();
-        papel.nome = "DIRETOR";
-        diretor.adicionarPapel(papel);
+        currentUser = mock(CurrentUserService.class);
+        var diretor = usuarioComPapel("DIRETOR");
         when(currentUser.get()).thenReturn(diretor);
         currentUserField.set(service, currentUser);
         template = new RequerimentoTemplate();
@@ -43,6 +43,48 @@ class TemplateStatusWorkflowTest {
         template.status = TemplateStatus.PENDENTE;
         template.isActive = false;
         when(repository.findById(template.id)).thenReturn(template);
+    }
+
+    private Usuario usuarioComPapel(String nome) {
+        var usuario = new Usuario();
+        usuario.ativo = true;
+        var papel = new Papel();
+        papel.nome = nome;
+        usuario.adicionarPapel(papel);
+        return usuario;
+    }
+
+    @Test
+    void onlyDirectorCanApproveAndReturnForEditing() {
+        for (String role : new String[]{"COORDENADOR", "SECRETARIA", "PROFESSOR"}) {
+            when(currentUser.get()).thenReturn(usuarioComPapel(role));
+            assertThrows(AuthorizationException.class, () -> service.approve(template.id));
+            assertThrows(AuthorizationException.class, () -> service.returnForEditing(template.id));
+            assertThrows(AuthorizationException.class, () -> service.activate(template.id));
+            assertEquals(TemplateStatus.PENDENTE, template.status);
+        }
+    }
+
+    @Test
+    void coordinatorAndSecretariaCanResubmitButProfessorCannot() {
+        template.status = TemplateStatus.EDITANDO;
+        for (String role : new String[]{"COORDENADOR", "SECRETARIA"}) {
+            when(currentUser.get()).thenReturn(usuarioComPapel(role));
+            service.submitForApproval(template.id);
+            assertEquals(TemplateStatus.PENDENTE, template.status);
+            template.status = TemplateStatus.EDITANDO;
+        }
+        when(currentUser.get()).thenReturn(usuarioComPapel("PROFESSOR"));
+        assertThrows(AuthorizationException.class, () -> service.submitForApproval(template.id));
+        assertEquals(TemplateStatus.EDITANDO, template.status);
+    }
+
+    @Test
+    void inactiveDirectorCannotApprove() {
+        var diretor = usuarioComPapel("DIRETOR");
+        diretor.ativo = false;
+        when(currentUser.get()).thenReturn(diretor);
+        assertThrows(AuthorizationException.class, () -> service.approve(template.id));
     }
 
     @Test
