@@ -79,6 +79,11 @@ import java.util.UUID;
         identidades.add(identidade);
     }
 
+    public boolean possuiPapel(String nome) {
+        return Boolean.TRUE.equals(ativo) && papeis.stream()
+                .anyMatch(up -> up.papel != null && nome.equals(up.papel.nome));
+    }
+
     public void adicionarPapel(Papel papel) {
         UsuarioPapel usuarioPapel = new UsuarioPapel();
 
