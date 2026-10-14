@@ -15,7 +15,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO identidade_usuario (id, usuario_id, provider, externalId)
 VALUES
-    ('6ceaf7ee-b077-4e40-9a5d-eae09aef5c56', '10000000-0000-0000-0000-000000000003', 'keycloak', '6ceaf7ee-b077-4e40-9a5d-eae09aef5c56')
+    ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000003', 'keycloak', '30000000-0000-0000-0000-000000000003')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO usuario_papel (id, usuario_id, papel_id)
@@ -31,6 +31,7 @@ INSERT INTO requerimento_template (
     category,
     version,
     isActive,
+    status,
     fields,
     createdAt,
     updatedAt
@@ -42,6 +43,7 @@ VALUES (
     'ACADEMICO',
     1,
     true,
+    'ATIVO',
     '[
         {
             "id": "finalidade",
@@ -88,4 +90,25 @@ VALUES (
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
+ON CONFLICT DO NOTHING;
+
+-- Usuários e papéis do domínio para os cenários de autorização.
+INSERT INTO usuario (id, nome, email, ativo, createdAt) VALUES
+ ('10000000-0000-0000-0000-000000000004', 'Diretor Desenvolvimento', 'diretor.dev@femass.edu.br', true, CURRENT_TIMESTAMP),
+ ('10000000-0000-0000-0000-000000000005', 'Coordenador Desenvolvimento', 'coordenador.dev@femass.edu.br', true, CURRENT_TIMESTAMP),
+ ('10000000-0000-0000-0000-000000000006', 'Secretaria Desenvolvimento', 'secretaria.dev@femass.edu.br', true, CURRENT_TIMESTAMP)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO usuario_papel (id, usuario_id, papel_id) VALUES
+ ('40000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000004', 4),
+ ('40000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000005', 3),
+ ('40000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000006', 5)
+ON CONFLICT DO NOTHING;
+
+-- O externalId corresponde exatamente ao sub do token OIDC (users[].id no realm).
+-- O id da linha identidade_usuario é independente do id do Keycloak.
+INSERT INTO identidade_usuario (id, usuario_id, provider, externalId) VALUES
+ ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000004', 'keycloak', '30000000-0000-0000-0000-000000000006'),
+ ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000005', 'keycloak', '30000000-0000-0000-0000-000000000004'),
+ ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000006', 'keycloak', '30000000-0000-0000-0000-000000000005')
 ON CONFLICT DO NOTHING;
