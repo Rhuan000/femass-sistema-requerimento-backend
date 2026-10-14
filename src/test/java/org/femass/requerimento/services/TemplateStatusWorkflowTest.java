@@ -140,4 +140,71 @@ class TemplateStatusWorkflowTest {
                 java.util.Map.of("fieldKey", "nome", "type", "text", "label", "Nome"),
                 java.util.Map.of("fieldKey", "nome", "type", "text", "label", "Nome"))));
     }
+
+    @Test
+    void invalidFieldsReportEveryErrorByField() {
+        var validator = new RequerimentoTemplateValidator();
+        var error = assertThrows(BusinessValidationException.class, () -> validator.validateFields(java.util.List.of(
+                java.util.Map.of("fieldKey", "nome", "type", "text", "label", "Nome"),
+                java.util.Map.of("fieldKey", "nome", "type", "", "label", ""))));
+        assertEquals(java.util.Set.of("fields[1].fieldKey", "fields[1].type", "fields[1].label"),
+                error.getFieldErrors().keySet());
+    }
+
+    @Test
+    void availableActionsFollowRoleAndStatus() {
+        var diretor = usuarioComPapel("DIRETOR");
+        var secretaria = usuarioComPapel("SECRETARIA");
+        var aluno = usuarioComPapel("ALUNO");
+
+        template.status = TemplateStatus.PENDENTE;
+        assertEquals(java.util.List.of("approve", "return-for-editing"), service.availableActions(template, diretor));
+        assertEquals(java.util.List.of(), service.availableActions(template, secretaria));
+
+        template.status = TemplateStatus.EDITANDO;
+        assertEquals(java.util.List.of("edit", "submit-approval"), service.availableActions(template, secretaria));
+        assertEquals(java.util.List.of("edit", "submit-approval"), service.availableActions(template, diretor));
+
+        template.status = TemplateStatus.APROVADO;
+        assertEquals(java.util.List.of("activate"), service.availableActions(template, diretor));
+        template.status = TemplateStatus.DESATIVADO;
+        assertEquals(java.util.List.of("activate"), service.availableActions(template, diretor));
+        template.status = TemplateStatus.ATIVO;
+        assertEquals(java.util.List.of("deactivate"), service.availableActions(template, diretor));
+
+        for (TemplateStatus status : TemplateStatus.values()) {
+            template.status = status;
+            assertEquals(java.util.List.of(), service.availableActions(template, aluno));
+            assertEquals(java.util.List.of(), service.availableActions(template, null));
+        }
+    }
+
+    @Test
+    void everyAvailableActionIsAcceptedByTheService() {
+        // Garante que availableActions não oferece nada que o serviço recusaria.
+        for (String role : new String[]{"DIRETOR", "COORDENADOR", "SECRETARIA", "PROFESSOR"}) {
+            var usuario = usuarioComPapel(role);
+            when(currentUser.get()).thenReturn(usuario);
+            for (TemplateStatus status : TemplateStatus.values()) {
+                template.status = status;
+                for (String action : service.availableActions(template, usuario)) {
+                    template.status = status;
+                    switch (action) {
+                        case "edit" -> {
+                            var changes = new RequerimentoTemplate();
+                            changes.id = template.id;
+                            changes.fields = java.util.List.of();
+                            assertDoesNotThrow(() -> service.update(changes), role + " " + status + " " + action);
+                        }
+                        case "submit-approval" -> assertDoesNotThrow(() -> service.submitForApproval(template.id));
+                        case "approve" -> assertDoesNotThrow(() -> service.approve(template.id));
+                        case "return-for-editing" -> assertDoesNotThrow(() -> service.returnForEditing(template.id));
+                        case "activate" -> assertDoesNotThrow(() -> service.activate(template.id));
+                        case "deactivate" -> assertDoesNotThrow(() -> service.deactivate(template.id));
+                        default -> fail("Ação desconhecida: " + action);
+                    }
+                }
+            }
+        }
+    }
 }

@@ -16,4 +16,7 @@ public class RequerimentoTemplateDTO {
     public List<RequerimentoTemplateFieldDTO> fields;
     public Instant createdAt;
     public Instant updatedAt;
+
+    /** Ações que o usuário atual pode executar (ex.: approve, edit). Somente leitura. */
+    public List<String> availableActions;
 }

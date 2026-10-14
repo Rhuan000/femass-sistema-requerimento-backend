@@ -18,8 +18,10 @@ import jakarta.ws.rs.core.StreamingOutput;
 import org.femass.requerimento.dtos.DocumentoUploadDTO;
 import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
 import org.femass.requerimento.entities.RequerimentoSubmission;
+import org.femass.requerimento.entities.Usuario;
 import org.femass.requerimento.exceptions.BusinessValidationException;
 import org.femass.requerimento.mappers.RequerimentoSubmissionMapper;
+import org.femass.requerimento.services.CurrentUserService;
 import org.femass.requerimento.services.DocumentoService;
 import org.femass.requerimento.services.RequerimentoSubmissionService;
 import org.femass.requerimento.services.RequerimentoTemplateService;
@@ -44,6 +46,8 @@ public class RequerimentoSubmissionResource {
     RequerimentoTemplateService templateService;
     @Inject
     DocumentoService documentoService;
+    @Inject
+    CurrentUserService currentUserService;
 
     @POST
     //@RolesAllowed({"ALUNO", "PROFESSOR"})
@@ -142,7 +146,11 @@ public class RequerimentoSubmissionResource {
     }
 
     private RequerimentoSubmissionDTO toDTO(RequerimentoSubmission submission) {
-        return mapper.toDTO(submission, templateService.get(submission.templateId));
+        RequerimentoSubmissionDTO dto = mapper.toDTO(submission, templateService.get(submission.templateId));
+        Usuario usuario = currentUserService.find().orElse(null);
+        dto.canEdit = service.canEdit(submission, usuario);
+        dto.canSubmit = service.canSubmit(submission, usuario);
+        return dto;
     }
 
     private String contentDisposition(String fileName) {

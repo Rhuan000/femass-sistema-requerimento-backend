@@ -5,12 +5,15 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.femass.requerimento.entities.RequerimentoTemplate;
 import org.femass.requerimento.entities.TemplateStatus;
+import org.femass.requerimento.entities.Usuario;
+import org.femass.requerimento.exceptions.AuthorizationException;
 import org.femass.requerimento.exceptions.BusinessValidationException;
 import org.femass.requerimento.exceptions.ResourceNotFoundException;
 import org.femass.requerimento.repositories.RequerimentoTemplateRepository;
 import org.femass.requerimento.validators.RequerimentoTemplateValidator;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,13 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class RequerimentoTemplateService {
+    public static final String ACTION_EDIT = "edit";
+    public static final String ACTION_SUBMIT_APPROVAL = "submit-approval";
+    public static final String ACTION_APPROVE = "approve";
+    public static final String ACTION_RETURN_FOR_EDITING = "return-for-editing";
+    public static final String ACTION_ACTIVATE = "activate";
+    public static final String ACTION_DEACTIVATE = "deactivate";
+
     @Inject RequerimentoTemplateRepository repository;
     @Inject RequerimentoTemplateValidator validator;
     @Inject CurrentUserService currentUserService;
@@ -125,18 +135,52 @@ public class RequerimentoTemplateService {
         return db;
     }
 
+    /**
+     * Ações que o usuário pode executar no template, seguindo as mesmas regras
+     * de papel e de estado dos métodos acima.
+     */
+    public List<String> availableActions(RequerimentoTemplate template, Usuario usuario) {
+        List<String> actions = new ArrayList<>();
+        if (usuario == null || template == null || template.status == null) return actions;
+
+        if (podeSolicitar(usuario) && template.status == TemplateStatus.EDITANDO) {
+            actions.add(ACTION_EDIT);
+            actions.add(ACTION_SUBMIT_APPROVAL);
+        }
+        if (podeDecidir(usuario)) {
+            switch (template.status) {
+                case PENDENTE -> {
+                    actions.add(ACTION_APPROVE);
+                    actions.add(ACTION_RETURN_FOR_EDITING);
+                }
+                case APROVADO, DESATIVADO -> actions.add(ACTION_ACTIVATE);
+                case ATIVO -> actions.add(ACTION_DEACTIVATE);
+                default -> { }
+            }
+        }
+        return actions;
+    }
+
+    /** Diretor, coordenador e secretária podem criar, editar e reenviar templates. */
+    public boolean podeSolicitar(Usuario usuario) {
+        return usuario != null && (usuario.possuiPapel("DIRETOR") || usuario.possuiPapel("COORDENADOR")
+                || usuario.possuiPapel("SECRETARIA"));
+    }
+
+    /** Somente o diretor aprova, devolve, ativa e desativa templates. */
+    public boolean podeDecidir(Usuario usuario) {
+        return usuario != null && usuario.possuiPapel("DIRETOR");
+    }
+
     private void exigirSolicitante() {
-        var usuario = currentUserService.get();
-        if (!usuario.possuiPapel("DIRETOR") && !usuario.possuiPapel("COORDENADOR")
-                && !usuario.possuiPapel("SECRETARIA")) {
-            throw new org.femass.requerimento.exceptions.AuthorizationException(
-                    "Usuário não pode solicitar ou editar templates");
+        if (!podeSolicitar(currentUserService.get())) {
+            throw new AuthorizationException("Usuário não pode solicitar ou editar templates");
         }
     }
 
     private void exigirDiretor() {
-        if (!currentUserService.get().possuiPapel("DIRETOR")) {
-            throw new org.femass.requerimento.exceptions.AuthorizationException(
+        if (!podeDecidir(currentUserService.get())) {
+            throw new AuthorizationException(
                     "Somente o diretor pode decidir ou alterar a disponibilidade de templates");
         }
     }

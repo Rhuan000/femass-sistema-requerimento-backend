@@ -17,4 +17,8 @@ public class RequerimentoSubmissionDTO {
     public Map<String, Object> data;
     public List<RequerimentoSubmissionAnswerDTO> answers;
     public List<DocumentoUploadDTO> documentos;
+
+    // Permissões do usuário atual neste requerimento. Somente leitura.
+    public Boolean canEdit;
+    public Boolean canSubmit;
 }
