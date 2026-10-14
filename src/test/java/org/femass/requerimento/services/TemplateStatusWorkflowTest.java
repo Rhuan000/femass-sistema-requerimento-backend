@@ -28,6 +28,16 @@ class TemplateStatusWorkflowTest {
         var validatorField = RequerimentoTemplateService.class.getDeclaredField("validator");
         validatorField.setAccessible(true);
         validatorField.set(service, mock(RequerimentoTemplateValidator.class));
+        var currentUserField = RequerimentoTemplateService.class.getDeclaredField("currentUserService");
+        currentUserField.setAccessible(true);
+        CurrentUserService currentUser = mock(CurrentUserService.class);
+        var diretor = new org.femass.requerimento.entities.Usuario();
+        diretor.ativo = true;
+        var papel = new org.femass.requerimento.entities.Papel();
+        papel.nome = "DIRETOR";
+        diretor.adicionarPapel(papel);
+        when(currentUser.get()).thenReturn(diretor);
+        currentUserField.set(service, currentUser);
         template = new RequerimentoTemplate();
         template.id = UUID.randomUUID();
         template.status = TemplateStatus.PENDENTE;
