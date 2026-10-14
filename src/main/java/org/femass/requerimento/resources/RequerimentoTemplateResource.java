@@ -1,7 +1,6 @@
 package org.femass.requerimento.resources;
 
 import io.quarkus.security.Authenticated;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -27,7 +26,7 @@ public class RequerimentoTemplateResource {
 
     @GET
     @Path("/management")
-    @RolesAllowed({"DIRETOR", "COORDENADOR", "COODERNADOR", "SECRETARIA"})
+    @Authenticated
     public List<RequerimentoTemplateDTO> listAll() {
         return service.listAll().stream().map(mapper::toDTO).toList();
     }
@@ -40,7 +39,7 @@ public class RequerimentoTemplateResource {
     }
 
     @POST
-    @RolesAllowed({"DIRETOR", "COORDENADOR", "COODERNADOR", "SECRETARIA"})
+    @Authenticated
     public Response create(RequerimentoTemplateDTO dto) {
         return Response.status(Response.Status.CREATED)
             .entity(mapper.toDTO(service.create(mapper.toEntity(dto)))).build();
@@ -48,7 +47,7 @@ public class RequerimentoTemplateResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"DIRETOR", "COORDENADOR", "COODERNADOR", "SECRETARIA"})
+    @Authenticated
     public RequerimentoTemplateDTO update(@PathParam("id") UUID id, RequerimentoTemplateDTO dto) {
         var entity = mapper.toEntity(dto);
         entity.id = id;
@@ -57,35 +56,35 @@ public class RequerimentoTemplateResource {
 
     @POST
     @Path("/{id}/submit-approval")
-    @RolesAllowed({"DIRETOR", "COORDENADOR", "COODERNADOR", "SECRETARIA"})
+    @Authenticated
     public RequerimentoTemplateDTO submitApproval(@PathParam("id") UUID id) {
         return mapper.toDTO(service.submitForApproval(id));
     }
 
     @POST
     @Path("/{id}/approve")
-    @RolesAllowed("DIRETOR")
+    @Authenticated
     public RequerimentoTemplateDTO approve(@PathParam("id") UUID id) {
         return mapper.toDTO(service.approve(id));
     }
 
     @POST
     @Path("/{id}/return-for-editing")
-    @RolesAllowed("DIRETOR")
+    @Authenticated
     public RequerimentoTemplateDTO returnForEditing(@PathParam("id") UUID id) {
         return mapper.toDTO(service.returnForEditing(id));
     }
 
     @POST
     @Path("/{id}/activate")
-    @RolesAllowed("DIRETOR")
+    @Authenticated
     public RequerimentoTemplateDTO activate(@PathParam("id") UUID id) {
         return mapper.toDTO(service.activate(id));
     }
 
     @POST
     @Path("/{id}/deactivate")
-    @RolesAllowed("DIRETOR")
+    @Authenticated
     public RequerimentoTemplateDTO deactivate(@PathParam("id") UUID id) {
         return mapper.toDTO(service.deactivate(id));
     }
