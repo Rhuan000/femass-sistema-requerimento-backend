@@ -31,6 +31,7 @@ INSERT INTO requerimento_template (
     category,
     version,
     isActive,
+    status,
     fields,
     createdAt,
     updatedAt
@@ -42,6 +43,7 @@ VALUES (
     'ACADEMICO',
     1,
     true,
+    'ATIVO',
     '[
         {
             "id": "finalidade",
