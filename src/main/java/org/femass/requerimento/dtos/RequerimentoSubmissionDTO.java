@@ -11,7 +11,10 @@ public class RequerimentoSubmissionDTO {
     public String usuarioId;
     public String status;
     public Instant createdAt;
+    public Instant updatedAt;
+    public Instant submittedAt;
 
     public Map<String, Object> data;
     public List<RequerimentoSubmissionAnswerDTO> answers;
+    public List<DocumentoUploadDTO> documentos;
 }

@@ -13,4 +13,8 @@ public class PapelRepository
     public Papel findByNome(String nome) {
         return find("nome", nome).firstResult();
     }
+    public Papel findById(Long id) {
+        return find("id", id).firstResult();
+    }
+
 }

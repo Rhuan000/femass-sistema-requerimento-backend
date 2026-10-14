@@ -6,6 +6,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.femass.requerimento.entities.IdentidadeUsuario;
 import org.femass.requerimento.entities.Usuario;
 import org.femass.requerimento.repositories.IdentidadeUsuarioRepository;
+import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class CurrentUserService {
@@ -16,6 +17,7 @@ public class CurrentUserService {
     @Inject
     IdentidadeUsuarioRepository identidadeUsuarioRepository;
 
+    @Transactional
     public Usuario get() {
         String externalId = jwt.getSubject();
 
@@ -29,6 +31,8 @@ public class CurrentUserService {
             );
         }
 
-        return identidade.usuario;
+        Usuario usuario = identidade.usuario;
+        usuario.papeis.size();
+        return usuario;
     }
 }

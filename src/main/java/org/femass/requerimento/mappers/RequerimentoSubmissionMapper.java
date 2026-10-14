@@ -3,6 +3,8 @@ package org.femass.requerimento.mappers;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.femass.requerimento.dtos.RequerimentoSubmissionAnswerDTO;
 import org.femass.requerimento.dtos.RequerimentoSubmissionDTO;
+import org.femass.requerimento.dtos.DocumentoUploadDTO;
+import org.femass.requerimento.entities.Documento;
 import org.femass.requerimento.entities.RequerimentoSubmission;
 import org.femass.requerimento.entities.RequerimentoTemplate;
 
@@ -25,12 +27,19 @@ public class RequerimentoSubmissionMapper {
 
         dto.id = entity.id;
         dto.templateId = entity.templateId;
-        dto.usuarioId = entity.usuario.id != null ? entity.usuario.id.toString() : null;
+        dto.usuarioId = entity.usuario != null && entity.usuario.id != null
+                ? entity.usuario.id.toString()
+                : null;
         dto.status = entity.status;
         dto.createdAt = entity.createdAt;
+        dto.updatedAt = entity.updatedAt;
+        dto.submittedAt = entity.submittedAt;
 
         dto.data = entity.data;
         dto.answers = mapAnswers(entity.data, entity.answers, template);
+        dto.documentos = entity.documentos == null
+                ? List.of()
+                : entity.documentos.stream().map(this::toDocumentoDTO).toList();
 
         return dto;
     }
@@ -110,9 +119,25 @@ public class RequerimentoSubmissionMapper {
         entity.templateId = dto.templateId;
         entity.status = dto.status;
         entity.createdAt = dto.createdAt;
+        entity.updatedAt = dto.updatedAt;
+        entity.submittedAt = dto.submittedAt;
 
         entity.data = dto.data;
 
         return entity;
+    }
+
+    public DocumentoUploadDTO toDocumentoDTO(Documento documento) {
+        return new DocumentoUploadDTO(
+                documento.id,
+                documento.submission.id,
+                documento.nomeOriginal,
+                documento.contentType,
+                documento.tamanho,
+                documento.bucket,
+                documento.objectName,
+                documento.etag,
+                documento.createdAt
+        );
     }
 }

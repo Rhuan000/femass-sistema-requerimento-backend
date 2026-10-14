@@ -14,6 +14,19 @@ public class RequerimentoSubmissionRepository implements PanacheRepositoryBase<R
         return list("templateId", templateId);
     }
 
+    public RequerimentoSubmission findDraftByTemplateAndUsuario(
+            UUID templateId,
+            UUID usuarioId,
+            String status
+    ) {
+        return find(
+                "templateId = ?1 and usuario.id = ?2 and status = ?3 order by updatedAt desc",
+                templateId,
+                usuarioId,
+                status
+        ).firstResult();
+    }
+
     public List<RequerimentoSubmission> findByUsuario(UUID usuarioId) {
         return list("usuario.id", usuarioId);
     }

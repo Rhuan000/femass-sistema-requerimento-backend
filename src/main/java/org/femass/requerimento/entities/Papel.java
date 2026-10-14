@@ -2,9 +2,6 @@ package org.femass.requerimento.entities;
 
 import jakarta.persistence.*;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(
@@ -17,17 +14,12 @@ import java.util.UUID;
         }
 )
 public class Papel {
-
     @Id
-    @GeneratedValue
-    public UUID id;
+    public Long id;
 
     @Column(nullable = false, length = 50)
     public String nome;
 
     @Column(length = 255)
     public String descricao;
-
-    @OneToMany(mappedBy = "papel")
-    public Set<UsuarioPapel> usuarios = new HashSet<>();
 }
