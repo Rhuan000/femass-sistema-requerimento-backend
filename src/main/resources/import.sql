@@ -91,3 +91,16 @@ VALUES (
     CURRENT_TIMESTAMP
 )
 ON CONFLICT DO NOTHING;
+
+-- Usuários e papéis do domínio para os cenários de autorização.
+INSERT INTO usuario (id, nome, email, ativo, createdAt) VALUES
+ ('10000000-0000-0000-0000-000000000004', 'Diretor Desenvolvimento', 'diretor.dev@femass.edu.br', true, CURRENT_TIMESTAMP),
+ ('10000000-0000-0000-0000-000000000005', 'Coordenador Desenvolvimento', 'coordenador.dev@femass.edu.br', true, CURRENT_TIMESTAMP),
+ ('10000000-0000-0000-0000-000000000006', 'Secretaria Desenvolvimento', 'secretaria.dev@femass.edu.br', true, CURRENT_TIMESTAMP)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO usuario_papel (id, usuario_id, papel_id) VALUES
+ ('40000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000004', 4),
+ ('40000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000005', 3),
+ ('40000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000006', 5)
+ON CONFLICT DO NOTHING;
