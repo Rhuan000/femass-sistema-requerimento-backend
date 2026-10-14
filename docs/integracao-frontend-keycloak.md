@@ -162,13 +162,17 @@ Não grave access token ou refresh token em `localStorage` ou `sessionStorage`. 
 
 ## Usuários locais de desenvolvimento
 
-O realm importado pelo Docker Compose possui, entre outros, estes usuários:
+O realm importado pelo Docker Compose (`keycloak/realm-femass.json`) possui estes usuários:
 
 | Usuário | Senha local | Role |
 | --- | --- | --- |
 | `aluno.dev` | `femass123` | `ALUNO` |
-| `professor.dev` | `femass123` | `PROFESSOR` |
+| `professor.dev` | `femass123` | `PROFESSOR`, `ORIENTADOR` |
+| `Coordernador.dev` | `femass123` | `COORDENADOR` |
+| `Diretor.dev` | `femass123` | `DIRETOR` |
+| `secretaria.dev` | `femass123` | `SECRETARIA` |
 | `analista.dev` | `femass123` | `ADMIN` |
+| `admin.dev` | `femass123` | `ADMIN` |
 
 Essas credenciais são exclusivamente para desenvolvimento local e não devem ser reutilizadas em ambientes compartilhados ou de produção.
 

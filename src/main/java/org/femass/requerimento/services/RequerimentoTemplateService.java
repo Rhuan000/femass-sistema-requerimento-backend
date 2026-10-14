@@ -27,6 +27,7 @@ public class RequerimentoTemplateService {
     }
 
     public List<RequerimentoTemplate> listAll() {
+        exigirSolicitante();
         return repository.listAll();
     }
 

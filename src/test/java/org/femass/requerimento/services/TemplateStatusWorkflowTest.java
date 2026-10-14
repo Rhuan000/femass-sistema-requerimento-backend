@@ -119,4 +119,25 @@ class TemplateStatusWorkflowTest {
         service.approve(template.id);
         assertThrows(BusinessValidationException.class, () -> service.approve(template.id));
     }
+
+    @Test
+    void onlyRequestersCanListAllTemplates() {
+        for (String role : new String[]{"DIRETOR", "COORDENADOR", "SECRETARIA"}) {
+            when(currentUser.get()).thenReturn(usuarioComPapel(role));
+            assertDoesNotThrow(() -> service.listAll());
+        }
+        for (String role : new String[]{"ALUNO", "PROFESSOR"}) {
+            when(currentUser.get()).thenReturn(usuarioComPapel(role));
+            assertThrows(AuthorizationException.class, () -> service.listAll());
+        }
+    }
+
+    @Test
+    void invalidFieldsAreRejectedAsBusinessValidation() {
+        var validator = new RequerimentoTemplateValidator();
+        assertThrows(BusinessValidationException.class, () -> validator.validateFields(java.util.List.of()));
+        assertThrows(BusinessValidationException.class, () -> validator.validateFields(java.util.List.of(
+                java.util.Map.of("fieldKey", "nome", "type", "text", "label", "Nome"),
+                java.util.Map.of("fieldKey", "nome", "type", "text", "label", "Nome"))));
+    }
 }
