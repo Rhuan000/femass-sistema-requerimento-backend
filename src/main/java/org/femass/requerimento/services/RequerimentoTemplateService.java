@@ -20,6 +20,7 @@ import java.util.UUID;
 public class RequerimentoTemplateService {
     @Inject RequerimentoTemplateRepository repository;
     @Inject RequerimentoTemplateValidator validator;
+    @Inject CurrentUserService currentUserService;
 
     public List<RequerimentoTemplate> listActive() {
         return repository.findActive();
@@ -37,6 +38,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate create(RequerimentoTemplate entity) {
+        exigirSolicitante();
         validator.validateFields(entity.fields);
         entity.id = UUID.randomUUID();
         entity.fields = normalizeFields(entity.fields);
@@ -51,6 +53,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate update(RequerimentoTemplate entity) {
+        exigirSolicitante();
         RequerimentoTemplate db = get(entity.id);
         if (db.status != TemplateStatus.EDITANDO) {
             throw new BusinessValidationException("Somente templates em EDITANDO podem ser alterados");
@@ -66,6 +69,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate submitForApproval(UUID id) {
+        exigirSolicitante();
         RequerimentoTemplate db = get(id);
         if (db.status != TemplateStatus.EDITANDO) {
             throw new BusinessValidationException("Somente templates em EDITANDO podem ser reenviados");
@@ -77,6 +81,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate approve(UUID id) {
+        exigirDiretor();
         RequerimentoTemplate db = get(id);
         if (db.status != TemplateStatus.PENDENTE) {
             throw new BusinessValidationException("A aprovação exige estado PENDENTE");
@@ -87,6 +92,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate returnForEditing(UUID id) {
+        exigirDiretor();
         RequerimentoTemplate db = get(id);
         if (db.status != TemplateStatus.PENDENTE) {
             throw new BusinessValidationException("A devolução exige estado PENDENTE");
@@ -97,6 +103,7 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate activate(UUID id) {
+        exigirDiretor();
         RequerimentoTemplate db = get(id);
         if (db.status != TemplateStatus.APROVADO && db.status != TemplateStatus.DESATIVADO) {
             throw new BusinessValidationException("Somente templates aprovados ou desativados podem ser ativados");
@@ -108,12 +115,29 @@ public class RequerimentoTemplateService {
 
     @Transactional
     public RequerimentoTemplate deactivate(UUID id) {
+        exigirDiretor();
         RequerimentoTemplate db = get(id);
         if (db.status != TemplateStatus.ATIVO) {
             throw new BusinessValidationException("Somente templates ATIVOS podem ser desativados");
         }
         changeStatus(db, TemplateStatus.DESATIVADO);
         return db;
+    }
+
+    private void exigirSolicitante() {
+        var usuario = currentUserService.get();
+        if (!usuario.possuiPapel("DIRETOR") && !usuario.possuiPapel("COORDENADOR")
+                && !usuario.possuiPapel("SECRETARIA")) {
+            throw new org.femass.requerimento.exceptions.AuthorizationException(
+                    "Usuário não pode solicitar ou editar templates");
+        }
+    }
+
+    private void exigirDiretor() {
+        if (!currentUserService.get().possuiPapel("DIRETOR")) {
+            throw new org.femass.requerimento.exceptions.AuthorizationException(
+                    "Somente o diretor pode decidir ou alterar a disponibilidade de templates");
+        }
     }
 
     private void changeStatus(RequerimentoTemplate db, TemplateStatus status) {
