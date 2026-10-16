@@ -36,13 +36,12 @@
         "description": "Pode solicitar abertura de novos templates, aprovar e reprovar requerimentos reponsáveis, acompanhar requerimentos reponsáveis e matérias, fechar requerimento responsável"
       },
       {
-        "name": "COODERNADOR",
+        "name": "COORDENADOR",
         "description": "Pode aprovar ou reprovar abertura de templates, pode abrir novos templates, aprovar e reprovar requerimentos responsáveis, acompanhar todos os requerimentos de um curso, fechar requerimentos"
       },
       {
         "name": "DIRETOR",
         "description": "Pode aprovar ou reprovar abertura de templates, pode abrir novos templates, aprovar ou reprovar requerimentos, acompanhar requerimentos responsável, acompanhar todos os requerimentos com filtro, fechar requerimentos all"
-
       }
     ]
   },
@@ -111,7 +110,8 @@
       ],
       "realmRoles": [
         "ALUNO"
-      ]
+      ],
+      "id": "30000000-0000-0000-0000-000000000001"
     },
     {
       "username": "analista.dev",
@@ -129,7 +129,8 @@
       ],
       "realmRoles": [
         "ADMIN"
-      ]
+      ],
+      "id": "30000000-0000-0000-0000-000000000002"
     },
     {
       "id": "30000000-0000-0000-0000-000000000003",
@@ -166,8 +167,9 @@
         }
       ],
       "realmRoles": [
-        "COODERNADOR"
-      ]
+        "COORDENADOR"
+      ],
+      "id": "30000000-0000-0000-0000-000000000004"
     },
     {
       "username": "Diretor.dev",
@@ -185,7 +187,8 @@
       ],
       "realmRoles": [
         "DIRETOR"
-      ]
+      ],
+      "id": "30000000-0000-0000-0000-000000000006"
     },
     {
       "username": "admin.dev",
@@ -202,9 +205,27 @@
         }
       ],
       "realmRoles": [
-        "ADMIN",
-        "ANALISTA",
-        "SOLICITANTE"
+        "ADMIN"
+      ],
+      "id": "30000000-0000-0000-0000-000000000007"
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000005",
+      "username": "secretaria.dev",
+      "email": "secretaria.dev@femass.edu.br",
+      "firstName": "Secretaria",
+      "lastName": "Desenvolvimento",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "femass123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "SECRETARIA"
       ]
     }
   ]

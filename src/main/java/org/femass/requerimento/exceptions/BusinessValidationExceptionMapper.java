@@ -24,6 +24,9 @@ public class BusinessValidationExceptionMapper
                 exception.getMessage(),
                 uriInfo.getPath()
         );
+        if (!exception.getFieldErrors().isEmpty()) {
+            error.fieldErrors = exception.getFieldErrors();
+        }
 
         return Response.status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)

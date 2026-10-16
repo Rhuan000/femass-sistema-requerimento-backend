@@ -6,7 +6,7 @@ Este documento descreve como o frontend deve autenticar o usuário no mesmo Keyc
 
 | Item | Valor |
 | --- | --- |
-| Keycloak | `http://localhost:8130` |
+| Keycloak | `http://localhost:8140` |
 | Realm | `femass` |
 | Client do frontend | `femass-frontend` |
 | API | `http://localhost:8080` |
@@ -71,7 +71,7 @@ Variáveis locais:
 
 ```dotenv
 VITE_API_URL=http://localhost:8080
-VITE_KEYCLOAK_URL=http://localhost:8130
+VITE_KEYCLOAK_URL=http://localhost:8140
 VITE_KEYCLOAK_REALM=femass
 VITE_KEYCLOAK_CLIENT_ID=femass-frontend
 ```
@@ -162,13 +162,17 @@ Não grave access token ou refresh token em `localStorage` ou `sessionStorage`. 
 
 ## Usuários locais de desenvolvimento
 
-O realm importado pelo Docker Compose possui, entre outros, estes usuários:
+O realm importado pelo Docker Compose (`keycloak/realm-femass.json`) possui estes usuários:
 
 | Usuário | Senha local | Role |
 | --- | --- | --- |
 | `aluno.dev` | `femass123` | `ALUNO` |
-| `professor.dev` | `femass123` | `PROFESSOR` |
+| `professor.dev` | `femass123` | `PROFESSOR`, `ORIENTADOR` |
+| `Coordernador.dev` | `femass123` | `COORDENADOR` |
+| `Diretor.dev` | `femass123` | `DIRETOR` |
+| `secretaria.dev` | `femass123` | `SECRETARIA` |
 | `analista.dev` | `femass123` | `ADMIN` |
+| `admin.dev` | `femass123` | `ADMIN` |
 
 Essas credenciais são exclusivamente para desenvolvimento local e não devem ser reutilizadas em ambientes compartilhados ou de produção.
 
@@ -177,6 +181,27 @@ Essas credenciais são exclusivamente para desenvolvimento local e não devem se
 - `401 Unauthorized`: token ausente, expirado ou inválido. Tente renovar o token; se isso falhar, inicie novo login.
 - `403 Forbidden`: token válido, mas o usuário não possui a role exigida.
 - `500 Internal Server Error` com mensagem de identidade não cadastrada: o usuário existe no Keycloak, mas ainda não está vinculado a um usuário do banco da aplicação.
+- `400 Bad Request` de validação: além de `message`, pode trazer `fieldErrors`, um mapa `campo → mensagem` para exibir junto de cada input. Em templates, a chave segue o JSON enviado (`fields[0].label`); em requerimentos, é o `fieldKey` do campo.
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Requerimento possui campos inválidos",
+  "path": "/submissions/.../submit",
+  "fieldErrors": { "nome": "Campo obrigatório", "email": "E-mail inválido" }
+}
+```
+
+## Permissões para montar a tela
+
+O frontend não precisa repetir as regras de papel e de estado; o backend as devolve prontas:
+
+- `GET /me`: dados do usuário (`id`, `nome`, `email`, `ativo`, `papeis`) e `permissions` gerais: `canCreateTemplate`, `canManageTemplates` (acesso a `GET /templates/management`), `canApproveTemplates` e `canCreateSubmission`.
+- Templates: cada item traz `availableActions`, com as ações que o usuário pode executar naquele template: `edit`, `submit-approval`, `approve`, `return-for-editing`, `activate`, `deactivate`. Cada ação corresponde ao endpoint de mesmo nome (`edit` é o `PUT /templates/{id}`).
+- Requerimentos: cada item traz `canEdit` (salvar rascunho e gerenciar documentos) e `canSubmit`.
+
+Esses campos são somente leitura; o backend continua validando cada chamada.
 
 ## Pendências conhecidas no backend/realm
 

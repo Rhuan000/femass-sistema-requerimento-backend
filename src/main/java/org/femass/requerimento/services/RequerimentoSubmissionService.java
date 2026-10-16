@@ -105,7 +105,7 @@ public class RequerimentoSubmissionService {
 
     public RequerimentoSubmission getOwnedDraft(UUID id) {
         RequerimentoSubmission submission = getOwnedSubmission(id);
-        if (!STATUS_RASCUNHO.equals(submission.status)) {
+        if (!isDraft(submission)) {
             throw new BusinessValidationException("Somente requerimentos em rascunho podem ser alterados");
         }
         return submission;
@@ -113,11 +113,34 @@ public class RequerimentoSubmissionService {
 
     public RequerimentoSubmission getOwnedSubmission(UUID id) {
         RequerimentoSubmission submission = get(id);
-        Usuario currentUser = currentUserService.get();
-        if (submission.usuario == null || !submission.usuario.id.equals(currentUser.id)) {
+        if (!isOwner(submission, currentUserService.get())) {
             throw new AuthorizationException("Você não pode acessar este requerimento");
         }
         return submission;
+    }
+
+    /** Mesma regra de {@link #saveDraft}: somente o dono altera, e só em rascunho. */
+    public boolean canEdit(RequerimentoSubmission submission, Usuario usuario) {
+        return isOwner(submission, usuario) && isDraft(submission);
+    }
+
+    /** Mesma regra de {@link #submit}; o preenchimento dos campos é validado no envio. */
+    public boolean canSubmit(RequerimentoSubmission submission, Usuario usuario) {
+        return canEdit(submission, usuario);
+    }
+
+    /** Mesma regra de {@link #createDraft}: qualquer usuário cadastrado pode abrir um rascunho. */
+    public boolean canCreate(Usuario usuario) {
+        return usuario != null;
+    }
+
+    private boolean isOwner(RequerimentoSubmission submission, Usuario usuario) {
+        return usuario != null && submission.usuario != null
+                && submission.usuario.id.equals(usuario.id);
+    }
+
+    private boolean isDraft(RequerimentoSubmission submission) {
+        return STATUS_RASCUNHO.equals(submission.status);
     }
 
     private List<Map<String, Object>> buildAnswerSnapshot(RequerimentoTemplate template, Map<String, Object> data) {
