@@ -25,6 +25,7 @@ public class RequerimentoTemplateMapper {
         dto.version = entity.version;
         dto.isActive = entity.isActive;
         dto.status = entity.status;
+        dto.approvalFlow = entity.approvalFlow;
         dto.createdAt = entity.createdAt;
         dto.updatedAt = entity.updatedAt;
 
@@ -48,6 +49,7 @@ public class RequerimentoTemplateMapper {
         entity.version = dto.version;
         entity.isActive = dto.isActive;
         entity.status = dto.status;
+        entity.approvalFlow = dto.approvalFlow;
         entity.createdAt = dto.createdAt;
         entity.updatedAt = dto.updatedAt;
 

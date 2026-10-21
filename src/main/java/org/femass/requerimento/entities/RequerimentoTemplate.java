@@ -27,6 +27,11 @@ public class RequerimentoTemplate {
     @Column(columnDefinition = "jsonb")
     public List<Map<String, Object>> fields;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "template_approval_rule", joinColumns = @JoinColumn(name = "template_id"))
+    @OrderColumn(name = "step_order")
+    public List<ApprovalRule> approvalFlow = new java.util.ArrayList<>();
+
     public Instant createdAt;
     public Instant updatedAt;
 }

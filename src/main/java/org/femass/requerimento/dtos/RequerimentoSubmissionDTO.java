@@ -10,6 +10,7 @@ public class RequerimentoSubmissionDTO {
     public UUID templateId;
     public String templateName;
     public String usuarioId;
+    public String submittedBy;
     public String status;
     public Instant createdAt;
     public Instant updatedAt;

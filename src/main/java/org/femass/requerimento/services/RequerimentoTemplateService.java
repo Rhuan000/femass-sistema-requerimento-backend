@@ -31,6 +31,7 @@ public class RequerimentoTemplateService {
     @Inject RequerimentoTemplateRepository repository;
     @Inject RequerimentoTemplateValidator validator;
     @Inject CurrentUserService currentUserService;
+    @Inject ApprovalService approvalService;
 
     public List<RequerimentoTemplate> listActive() {
         return repository.findActive();
@@ -53,6 +54,7 @@ public class RequerimentoTemplateService {
         validator.validateFields(entity.fields);
         entity.id = UUID.randomUUID();
         entity.fields = normalizeFields(entity.fields);
+        entity.approvalFlow = approvalService.validateRules(entity.approvalFlow);
         entity.createdAt = Instant.now();
         entity.updatedAt = entity.createdAt;
         entity.status = TemplateStatus.PENDENTE;
@@ -74,6 +76,7 @@ public class RequerimentoTemplateService {
         db.description = entity.description;
         db.category = entity.category;
         db.fields = normalizeFields(entity.fields);
+        db.approvalFlow = approvalService.validateRules(entity.approvalFlow);
         db.updatedAt = Instant.now();
         return db;
     }

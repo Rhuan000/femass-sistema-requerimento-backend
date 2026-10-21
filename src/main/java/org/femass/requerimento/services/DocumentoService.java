@@ -22,6 +22,7 @@ public class DocumentoService {
     @Inject RequerimentoSubmissionService submissionService;
     @Inject DocumentoRepository repository;
     @Inject RequerimentoSubmissionMapper mapper;
+    @Inject ApprovalService approvalService;
 
     @Transactional
     public DocumentoUploadDTO upload(UUID submissionId, FileUpload file) {
@@ -46,7 +47,7 @@ public class DocumentoService {
     }
 
     public DownloadedDocument download(UUID submissionId, UUID documentId) {
-        submissionService.getOwnedSubmission(submissionId);
+        approvalService.requireView(submissionService.get(submissionId));
         Documento documento = repository.findByIdAndSubmissionId(documentId, submissionId);
         if (documento == null) {
             throw new ResourceNotFoundException("Documento não encontrado");

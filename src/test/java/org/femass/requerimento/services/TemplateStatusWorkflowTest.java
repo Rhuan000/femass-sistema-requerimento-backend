@@ -25,6 +25,7 @@ class TemplateStatusWorkflowTest {
     @BeforeEach
     void setup() throws Exception {
         service = new RequerimentoTemplateService();
+        service.approvalService = new ApprovalService();
         repository = mock(RequerimentoTemplateRepository.class);
         var field = RequerimentoTemplateService.class.getDeclaredField("repository");
         field.setAccessible(true);

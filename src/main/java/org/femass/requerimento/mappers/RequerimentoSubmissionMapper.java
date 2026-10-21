@@ -28,6 +28,7 @@ public class RequerimentoSubmissionMapper {
         dto.id = entity.id;
         dto.templateId = entity.templateId;
         dto.templateName = template == null ? null : template.name;
+        dto.submittedBy = entity.usuario == null ? null : entity.usuario.nome;
         dto.usuarioId = entity.usuario != null && entity.usuario.id != null
                 ? entity.usuario.id.toString()
                 : null;

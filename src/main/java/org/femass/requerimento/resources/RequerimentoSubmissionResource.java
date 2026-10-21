@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Path("/submissions")
+@Authenticated
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class RequerimentoSubmissionResource {
@@ -48,6 +49,8 @@ public class RequerimentoSubmissionResource {
     DocumentoService documentoService;
     @Inject
     CurrentUserService currentUserService;
+    @Inject
+    org.femass.requerimento.services.ApprovalService approvalService;
 
     @POST
     //@RolesAllowed({"ALUNO", "PROFESSOR"})
@@ -148,7 +151,9 @@ public class RequerimentoSubmissionResource {
     @Path("/{id}")
     @Authenticated
     public RequerimentoSubmissionDTO get(@PathParam("id") UUID id) {
-        return toDTO(service.get(id));
+        RequerimentoSubmission submission = service.get(id);
+        approvalService.requireView(submission);
+        return toDTO(submission);
     }
 
     private RequerimentoSubmissionDTO toDTO(RequerimentoSubmission submission) {

@@ -3,6 +3,8 @@ package org.femass.requerimento.services;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.femass.requerimento.entities.RequerimentoSubmission;
 import org.femass.requerimento.entities.RequerimentoTemplate;
 import org.femass.requerimento.entities.Usuario;
@@ -30,6 +32,8 @@ public class RequerimentoSubmissionService {
     @Inject RequerimentoSubmissionValidator validator;
     @Inject RequerimentoTemplateRepository templateRepository;
     @Inject CurrentUserService currentUserService;
+    @Inject ApprovalService approvalService;
+    @Inject EntityManager em;
 
     public RequerimentoSubmission get(UUID id) {
         RequerimentoSubmission submission = repository.findById(id);
@@ -40,11 +44,14 @@ public class RequerimentoSubmissionService {
     }
 
     public List<RequerimentoSubmission> findByTemplate(UUID templateId) {
-        return repository.findByTemplateId(templateId);
+        Usuario user = currentUserService.get();
+        return repository.findByTemplateId(templateId).stream().filter(s -> approvalService.canView(s, user)).toList();
     }
 
     public List<RequerimentoSubmission> list() {
-        return repository.list("order by coalesce(submittedAt, createdAt) desc, id desc");
+        Usuario user = currentUserService.get();
+        return repository.list("order by coalesce(submittedAt, createdAt) desc, id desc").stream()
+                .filter(s -> approvalService.canView(s, user)).toList();
     }
 
     public RequerimentoSubmission findCurrentUserDraftByTemplate(UUID templateId) {
@@ -71,12 +78,18 @@ public class RequerimentoSubmissionService {
             throw new ResourceNotFoundException("Template não encontrado");
         }
 
+        // A consulta seguida de INSERT precisa ser serializada inclusive entre abas/navegadores.
+        Usuario user = currentUserService.get();
+        em.find(Usuario.class, user.id, LockModeType.PESSIMISTIC_WRITE);
+        RequerimentoSubmission existing = repository.findDraftByTemplateAndUsuario(entity.templateId, user.id, STATUS_RASCUNHO);
+        if (existing != null) return existing;
+
         Instant now = Instant.now();
         entity.id = UUID.randomUUID();
         entity.createdAt = now;
         entity.updatedAt = now;
         entity.status = STATUS_RASCUNHO;
-        entity.usuario = currentUserService.get();
+        entity.usuario = user;
         entity.data = entity.data == null ? new HashMap<>() : new HashMap<>(entity.data);
         entity.answers = List.of();
         repository.persist(entity);
@@ -99,16 +112,23 @@ public class RequerimentoSubmissionService {
             throw new ResourceNotFoundException("Template não encontrado");
         }
 
+        if (!Boolean.TRUE.equals(template.isActive)) {
+            throw new BusinessValidationException("O template precisa estar ativo para receber envios");
+        }
+
         validator.validate(template, draft);
         draft.answers = buildAnswerSnapshot(template, draft.data);
         draft.status = STATUS_ENVIADO;
         draft.submittedAt = Instant.now();
         draft.updatedAt = draft.submittedAt;
+        approvalService.start(draft, template);
         return draft;
     }
 
     public RequerimentoSubmission getOwnedDraft(UUID id) {
-        RequerimentoSubmission submission = getOwnedSubmission(id);
+        RequerimentoSubmission submission = em.find(RequerimentoSubmission.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (submission == null) throw new ResourceNotFoundException("Requerimento não encontrado");
+        if (!isOwner(submission, currentUserService.get())) throw new AuthorizationException("Você não pode acessar este requerimento");
         if (!isDraft(submission)) {
             throw new BusinessValidationException("Somente requerimentos em rascunho podem ser alterados");
         }

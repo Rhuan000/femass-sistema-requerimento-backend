@@ -14,6 +14,7 @@ public class RequerimentoTemplateDTO {
     public Boolean isActive;
     public TemplateStatus status;
     public List<RequerimentoTemplateFieldDTO> fields;
+    public List<org.femass.requerimento.entities.ApprovalRule> approvalFlow;
     public Instant createdAt;
     public Instant updatedAt;
 
