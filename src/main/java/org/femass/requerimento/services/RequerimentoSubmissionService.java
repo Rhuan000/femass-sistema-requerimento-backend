@@ -43,6 +43,10 @@ public class RequerimentoSubmissionService {
         return repository.findByTemplateId(templateId);
     }
 
+    public List<RequerimentoSubmission> list() {
+        return repository.list("order by coalesce(submittedAt, createdAt) desc, id desc");
+    }
+
     public RequerimentoSubmission findCurrentUserDraftByTemplate(UUID templateId) {
         Usuario currentUser = currentUserService.get();
         RequerimentoSubmission draft = repository.findDraftByTemplateAndUsuario(

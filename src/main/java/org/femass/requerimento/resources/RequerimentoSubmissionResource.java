@@ -132,6 +132,12 @@ public class RequerimentoSubmissionResource {
     }
 
     @GET
+    @Authenticated
+    public List<RequerimentoSubmissionDTO> list() {
+        return service.list().stream().map(this::toDTO).toList();
+    }
+
+    @GET
     @Path("/template/{templateId}")
     @Authenticated
     public List<RequerimentoSubmissionDTO> byTemplate(@PathParam("templateId") UUID templateId) {
